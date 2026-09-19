@@ -1,0 +1,231 @@
+\section{Method}
+\label{sec:method}
+
+We present UCDPA (Uncertainty-Calibrated Dual-Path Adaptation). We first recall the COME preliminaries that we build on (\S\ref{sec:method:prelim}), then introduce the UCB score (\S\ref{sec:method:ucb}), the dual-path adaptation loss (\S\ref{sec:method:dual}), the calibration regularizer (\S\ref{sec:method:cal}), the feature prototype alignment (\S\ref{sec:method:fpa}), and the full algorithm (\S\ref{sec:method:algo}).
+
+\subsection{Preliminaries: COME Formulation}
+\label{sec:method:prelim}
+
+Let $f_\theta: \R^{H\times W\times C} \to \R^K$ be a $K$-way classifier producing logits $\bz = f_\theta(\bx)$, with softmax $p = \softmax(\bz)$ and confidence $c = \max_k p_k$. COME~\citep{come2024come} augments this with an evidential (Dirichlet) view. The logits are $p$-norm normalized ($p{=}2$, temperature $\tau{=}1$) as $\tilde{z}_k = z_k / (\|\bz\|_2 + \tau)$, the evidence is $e_k = \exp(\ReLU(\tilde{z}_k)) - 1 \ge 0$ (where $\ReLU$ ensures non-negative logits and $-1$ makes low-activation classes contribute zero evidence), and the Dirichlet parameters are $\alpha_k = e_k + 1$, $S = \sum_k \alpha_k = K + \sum_k e_k$. The \emph{belief masses} and \emph{uncertainty mass} are
+\[
+  b_k = \frac{e_k}{S} = \frac{\alpha_k - 1}{S}, \qquad u = \frac{K}{S},
+\]
+forming the \emph{opinion} $\bo = (b_1,\dots,b_K,u) \in \R^{K+1}$ with $b_k \ge 0$, $u \in (0,1]$, $\sum_k b_k + u = 1$. The uncertainty $u$ is large when total evidence $S$ is small (model unsure) and approaches $0$ as $S \to \infty$ (model sure). COME defines the opinion entropy $H_\mathrm{opinion}(\bo) = -\sum_k b_k \log b_k - u \log u$ (with $0\log 0 = 0$), and the per-sample \emph{conservative entropy loss}
+\begin{equation}
+  \Loss_\mathrm{come,i} = (1-\lambda_\mathrm{come})\, H(p_i) + \lambda_\mathrm{come}\, H_\mathrm{opinion}(\bo_i),
+  \label{eq:come-loss}
+\end{equation}
+where $H(p_i) = -\sum_k p_{ik}\log p_{ik}$ is the softmax entropy and $\lambda_\mathrm{come} = 0.03$. COME updates only the LayerNorm affine parameters~\citep{niu2023sar}.
+
+\subsection{The UCB Score}
+\label{sec:method:ucb}
+
+COME's evidential machinery produces two complementary per-sample quantities: the softmax confidence $c_i = \max_k p_{ik}$ and the Dirichlet uncertainty $u_i = K/S_i$. These are computed from the same logits but capture different aspects of the model's epistemic state: $c_i$ measures the sharpness of the predictive distribution, while $u_i$ measures the total evidence mass. They need not agree---the model can be confidently wrong (high $c_i$, high $u_i$) or uncertainly correct (low $c_i$, low $u_i$).
+
+We propose to \emph{balance} these two quantities into a single routing signal.
+
+\begin{definition}[UCB score]
+\label{def:ucb}
+For a sample $\bx_i$ with confidence $c_i \in [0,1]$ and Dirichlet uncertainty $u_i \in (0,1]$, the \emph{Uncertainty-Confidence Balance (UCB) score} is
+\begin{equation}
+  b_i \;=\; \sigma\!\left(\frac{c_i - \tau_c}{T_c}\right) \cdot \sigma\!\left(\frac{1 - u_i - \tau_u}{T_u}\right),
+  \label{eq:ucb}
+\end{equation}
+where $\sigma(\cdot)$ is the sigmoid function, $\tau_c$ is the confidence threshold, $\tau_u$ is the uncertainty threshold, and $T_c, T_u$ are temperatures. We use $\tau_c = 0.7$, $\tau_u = 0.3$, $T_c = T_u = 0.1$. Both $c_i$ and $u_i$ are detached from the computation graph (the UCB score is a routing weight, not a learned parameter).
+\end{definition}
+
+\paragraph{Interpretation.}
+The first sigmoid, $\sigma((c_i - \tau_c)/T_c)$, is close to $1$ when $c_i \gg \tau_c$ (the model is confident) and close to $0$ when $c_i \ll \tau_c$. The second sigmoid, $\sigma((1 - u_i - \tau_u)/T_u)$, is close to $1$ when $u_i \ll 1 - \tau_u$ (the model is certain, since $1 - u_i$ is high) and close to $0$ when $u_i \gg 1 - \tau_u$. Their product $b_i$ is close to $1$ \emph{only} when the model is both confident and certain, and close to $0$ when the model is either unconfident or uncertain (or both). With the small temperatures $T_c=T_u=0.1$, the sigmoids approximate soft step functions at the thresholds, yielding near-binary routing with a smooth, differentiable boundary.
+
+We now formalize the key properties of the UCB score.
+
+\begin{theorem}[UCB Monotonicity]
+\label{thm:ucb}
+Let $b(c,u) = \sigma((c-\tau_c)/T_c)\,\sigma((1-u-\tau_u)/T_u)$ be the UCB score of Definition~\ref{def:ucb}, with $T_c, T_u > 0$. Then:
+\begin{enumerate}[label=(\alph*),leftmargin=*,topsep=2pt,itemsep=2pt]
+  \item \textbf{(Monotone in confidence.)} $\frac{\partial b}{\partial c} \ge 0$ for all $c \in [0,1]$, with equality only in the limit $T_c \to 0$.
+  \item \textbf{(Monotone in uncertainty.)} $\frac{\partial b}{\partial u} \le 0$ for all $u \in (0,1]$, with equality only in the limit $T_u \to 0$.
+  \item \textbf{(Maximum.)} $b$ achieves its supremum $1$ only in the limit $c \to 1$ and $u \to 0$; for all finite $(c,u)$, $b < 1$.
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}
+Let $s_c(c) = \sigma((c-\tau_c)/T_c)$ and $s_u(u) = \sigma((1-u-\tau_u)/T_u)$, so $b = s_c \cdot s_u$.
+
+\textbf{Part (a).} $\partial b/\partial c = s_u(u) \cdot \sigma'((c-\tau_c)/T_c) \cdot (1/T_c) > 0$ since each factor is positive. Equality holds only as $T_c \to 0$.
+
+\textbf{Part (b).} $\partial b/\partial u = s_c(c) \cdot \sigma'((1-u-\tau_u)/T_u) \cdot (-1/T_u) < 0$ since the final factor is negative.
+
+\textbf{Part (c).} $s_c(c) < 1$ for finite $c \le 1$ and $s_u(u) < 1$ for finite $u > 0$, so $b < 1$. The supremum $1$ is approached only as $c \to 1$ and $u \to 0$.
+\end{proof}
+
+\begin{remark}[Routing semantics.]
+Parts (a)--(c) guarantee routing is well-defined: samples with higher $c$ and lower $u$ receive strictly higher $b_i$ and are routed more strongly to the pseudo-label path. The contour $b=0.5$ is a smooth separator in the $(c,u)$ plane between the confident-and-certain region ($b>0.5$) and its complement; its exact orientation is a consequence of the product form and does not affect the routing semantics.
+\end{remark}
+
+\begin{remark}[Choice of thresholds and temperatures.]
+The thresholds $\tau_c=0.7$, $\tau_u=0.3$ are chosen so that a sample is routed to the pseudo-label path only when its confidence exceeds $0.7$ \emph{and} its uncertainty is below $1 - 0.3 = 0.7$ (i.e., the second sigmoid's input is positive when $u < 0.7$). The temperatures $T_c=T_u=0.1$ make the sigmoids steep, approximating hard routing at the thresholds while preserving differentiability. We ablate these choices in Appendix~\ref{app:hyperparameters}.
+\end{remark}
+
+\subsection{Dual-Path Adaptation}
+\label{sec:method:dual}
+
+The UCB score $b_i \in [0,1]$ routes each sample between two complementary objectives.
+
+\paragraph{Path 1: Conservative entropy (for uncertain samples).}
+For samples with low $b_i$ (uncertain or low-confidence), we apply the COME conservative entropy loss of Eq.~\eqref{eq:come-loss}:
+\[
+  \Loss_\mathrm{come,i} = (1-\lambda_\mathrm{come})\, H(p_i) + \lambda_\mathrm{come}\, H_\mathrm{opinion}(\bo_i).
+\]
+This path is conservative: it minimizes entropy without committing to a pseudo-label, and the opinion-entropy component down-weights samples with high Dirichlet uncertainty.
+
+\paragraph{Path 2: Pseudo-label cross-entropy (for confident samples).}
+For samples with high $b_i$ (confident and certain), we apply a pseudo-label cross-entropy loss. The pseudo-label is the model's argmax prediction:
+\[
+  y_i^* = \argmax_k p_{ik}, \qquad \Loss_\mathrm{pl,i} = \mathrm{CE}(y_i^*, p_i) = -\log p_{i,y_i^*}.
+\]
+This path provides a stronger gradient signal than entropy minimization when the model is already confident: entropy minimization has a vanishing gradient as $p \to \mathbf{1}_{y^*}$, whereas cross-entropy against the pseudo-label continues to sharpen the prediction toward a one-hot distribution.
+
+\paragraph{Scale normalization.}
+The two path losses operate at different scales: the conservative entropy $\Loss_\mathrm{come,i}$ has magnitude $\mathcal{O}(\log K)$ while the pseudo-label CE $\Loss_\mathrm{pl,i} = -\log p_{i,y_i^*}$ has magnitude $\mathcal{O}(-\log c_i)$, which vanishes as $c_i \to 1$. Without normalization, the entropy path would dominate the gradient even when the UCB score routes a sample to the pseudo-label path, causing UCDPA to degenerate to COME on accuracy. We therefore normalize the pseudo-label loss to the batch-mean scale of the conservative entropy:
+\[
+  \tilde{\Loss}_\mathrm{pl,i} = \Loss_\mathrm{pl,i} \cdot \frac{\E_\mathcal{B}[\Loss_\mathrm{come}]}{\E_\mathcal{B}[\Loss_\mathrm{pl}] + \epsilon},
+\]
+where $\E_\mathcal{B}[\cdot]$ denotes the batch mean (detached from the computation graph) and $\epsilon = 10^{-8}$. This ensures that when $b_i \approx 0.5$, the two paths contribute comparable gradient magnitudes, so the UCB routing actually controls the optimization direction rather than being overridden by scale imbalance.
+
+\paragraph{Class-balanced reweighting.}
+A known failure mode of TTA is class collapse: the model over-predicts a few classes and the adaptation reinforces this skew~\citep{niu2022eata,prabhu2023lada}. We mitigate this with a class-balanced inverse-frequency weight derived from an EMA class counter. Let $n_c^{(t)}$ be the EMA count of pseudo-label class $c$ at step $t$:
+\[
+  n_c^{(t)} = \beta\, n_c^{(t-1)} + (1-\beta)\, \sum_{i \in \mathcal{B}_t} \1\{y_i^* = c\},
+\]
+with $\beta = 0.99$. The inverse-frequency weight for class $c$ is
+\[
+  w_c = \frac{1 / (n_c^{(t)} + \epsilon)}, \qquad \tilde{w}_c = \frac{w_c}{\sum_{c'} w_{c'}},
+\]
+normalized so that $\sum_c \tilde{w}_c = 1$, with $\epsilon = 10^{-8}$ for numerical stability. The per-sample class-balanced weight is $w_{\mathrm{cb},i} = \tilde{w}_{y_i^*} \cdot K$ (scaled by $K$ so that the average weight is approximately $1$ under a uniform distribution). This down-weights over-predicted classes and up-weights under-predicted classes.
+
+\paragraph{Label-shift safeguards.}
+Under non-i.i.d.\ or label-shifted streams, a class that is absent from the stream for an extended period has its EMA count $n_c$ decay toward zero, which would inflate $w_{\mathrm{cb}}$ for any future pseudo-label of that class. To prevent this pathological behavior, we add three safeguards to the class-balance tracker:
+\begin{enumerate}[leftmargin=*,topsep=2pt,itemsep=2pt]
+  \item \textbf{Count floor} (\texttt{count\_floor}=0.01): clamp $n_c \gets \max(n_c, \texttt{count\_floor})$ after each EMA update, preventing division-by-near-zero.
+  \item \textbf{Weight clipping} (\texttt{w\_clip\_min}=0.5, \texttt{w\_clip\_max}=2.0): clamp $w_{\mathrm{cb},i} \gets \mathrm{clip}(w_{\mathrm{cb},i}, 0.5, 2.0)$, bounding the influence of any single class on the loss.
+  \item \textbf{Adaptive disable} (optional): when the stream's class-entropy diverges from uniform by more than a threshold (e.g., Jensen-Shannon divergence $> 0.3$), the class-balance path is automatically disabled, falling back to uniform weighting.
+\end{enumerate}
+These safeguards are configurable via \texttt{MethodConfig} and ensure the class-balance reweighting remains well-behaved under non-stationary, label-shifted streams.
+
+\paragraph{Dual-path loss.}
+The combined dual-path loss for a batch $\mathcal{B}$ of size $B$ is
+\begin{equation}
+  \Loss_\mathrm{dual} = \frac{1}{B} \sum_{i \in \mathcal{B}} \Big[ (1 - b_i)\, w_{\mathrm{cb},i}\, \Loss_\mathrm{come,i} \;+\; b_i\, w_{\mathrm{cb},i}\, \tilde{\Loss}_\mathrm{pl,i} \Big],
+  \label{eq:dual-loss}
+\end{equation}
+where $b_i$ is the (detached) UCB score and $\tilde{\Loss}_\mathrm{pl,i}$ is the scale-normalized pseudo-label loss. Note that both paths are weighted by the class-balanced weight $w_{\mathrm{cb},i}$, so class balance is enforced regardless of which path a sample takes. The UCB score $b_i$ controls the \emph{mix} between the two paths: when $b_i \to 1$, the loss is dominated by pseudo-label CE; when $b_i \to 0$, it is dominated by conservative entropy. For intermediate $b_i$, both contribute, providing a smooth interpolation rather than a hard switch.
+
+\subsection{Calibration Regularizer}
+\label{sec:method:cal}
+
+The dual-path loss uses two different views of the model's epistemic state---softmax confidence (for routing and pseudo-labeling) and Dirichlet uncertainty (for routing and conservative entropy)---but does not enforce that these two views agree. Without such enforcement, they can drift apart during adaptation, undermining routing reliability.
+
+\begin{definition}[Calibration regularizer]
+\label{def:cal}
+For a batch $\mathcal{B}$ with confidences $\{c_i\}$ and Dirichlet uncertainties $\{u_i\}$, the calibration regularizer is the batch-mean gap between softmax and evidential confidence:
+\begin{equation}
+  \Loss_\mathrm{cal} = \left| \E_\mathcal{B}[c] - \E_\mathcal{B}[1-u] \right|,
+  \label{eq:cal-loss}
+\end{equation}
+where $1 - u_i$ is the evidential confidence (complement of the Dirichlet uncertainty mass).
+\end{definition}
+
+\begin{remark}[Scope and limitations.]
+\label{rem:cal-scope}
+$\Loss_\mathrm{cal}$ is a \emph{batch-mean consistency} objective, not a per-sample calibration guarantee. It controls first-order agreement between the two uncertainty views but does not directly bind them to empirical accuracy, nor does it control higher-order (e.g., binned) calibration. We treat it as a lightweight online surrogate: the UCB routing already couples $c_i$ and $u_i$ per-sample through the product form, and the regularizer serves to prevent their batch-level means from drifting apart during adaptation. A stronger per-sample or binned variant is left for future work.
+\end{remark}
+
+\begin{remark}[Gradient flow.]
+\label{rem:grad-flow}
+A key implementation detail: \emph{the UCB score uses detached $c_i, u_i$ (it is a routing weight, not a learned parameter), but the calibration regularizer does \textbf{not} detach them.} Consequently, $\Loss_\mathrm{cal}$'s gradient flows through $c_i = \max_k p_{ik}$ and $u_i = K/S_i$ back to the logits and the LayerNorm parameters. This is by design: the regularizer's purpose is to shape the model's logits so that softmax confidence and evidential uncertainty remain consistent. Detaching them would nullify the regularizer entirely. Algorithm~\ref{alg:ucdpa} makes this explicit: line~\ref{alg:ucb-detach} detaches for routing; line~\ref{alg:cal-no-detach} does \emph{not} detach for $\Loss_\mathrm{cal}$. There is no contradiction: the two detach decisions serve different purposes (routing stability vs.\ calibration).
+\end{remark}
+
+We note one useful property of $\Loss_\mathrm{cal}$.
+
+\begin{proposition}[Per-sample consistency under mean calibration]
+\label{prop:cal}
+Let $\delta_i = c_i - (1-u_i)$ be the per-sample discrepancy, and suppose $\Loss_\mathrm{cal} = |\E[\delta]| \le \varepsilon$. Then by the triangle inequality and Jensen's inequality,
+\[
+  \E[|\delta|] \;\le\; \sqrt{\mathrm{Var}(\delta)} + \varepsilon.
+\]
+Thus when the mean calibration gap $\varepsilon$ is small, per-sample discrepancies are controlled by the variance of $\delta$.
+\end{proposition}
+
+\begin{proof}
+$\E[|\delta|] \le \E[|\delta - \E[\delta]|] + |\E[\delta]| \le \sqrt{\mathrm{Var}(\delta)} + \varepsilon$ by Jensen applied to $|\cdot|$.
+\end{proof}
+
+\paragraph{Remark.}
+Proposition~\ref{prop:cal} is a consistency property, not a calibration bound in the formal sense (it does not invoke empirical accuracy). It clarifies that minimizing $\Loss_\mathrm{cal}$ bounds the mean discrepancy, and the residual per-sample discrepancy is governed by the variance of $\delta$, which the regularizer implicitly reduces by pulling the means together. We do not claim a stronger guarantee.
+
+\subsection{Feature Prototype Alignment}
+\label{sec:method:fpa}
+
+To also stabilize the representation under shift, we add an optional feature prototype alignment (FPA) term. We maintain an EMA prototype $\bmu_c \in \R^d$ per class, updated as $\bmu_c^{(t)} = m\, \bmu_c^{(t-1)} + (1-m)\, \mathrm{mean}_{i:y_i^*=c}\,\bff_i$ with momentum $m = 0.9$, where $\bff_i$ is the penultimate feature. The FPA loss is a cross-entropy over cosine similarities to the prototypes:
+\begin{equation}
+  \Loss_\mathrm{fpa} = \frac{1}{B} \sum_{i \in \mathcal{B}} \mathrm{CE}\!\left( \frac{\mathrm{sim}(\bff_i, \bmu_\cdot)}{T_\mathrm{fpa}},\; y_i^* \right), \qquad \mathrm{sim}(\bff, \bmu) = \frac{\bff^\top \bmu}{\|\bff\|\,\|\bmu\|},
+  \label{eq:fpa-loss}
+\end{equation}
+with $T_\mathrm{fpa}=0.1$. In the main configuration we set $\lambda_\mathrm{fpa}=0$ (disabled) for efficiency; FPA is an optional auxiliary activated when representation drift is a concern.
+
+\subsection{Full Objective and Algorithm}
+\label{sec:method:algo}
+
+The total UCDPA loss combines the dual-path loss, the calibration regularizer, and the feature prototype alignment:
+\begin{equation}
+  \Loss = \Loss_\mathrm{dual} + \lambda_\mathrm{cal}\, \Loss_\mathrm{cal} + \lambda_\mathrm{fpa}\, \Loss_\mathrm{fpa},
+  \label{eq:total-loss}
+\end{equation}
+with $\lambda_\mathrm{cal} = 0.02$ and $\lambda_\mathrm{fpa} = 0$ (prototype alignment disabled in the main configuration). We update only the LayerNorm affine parameters of the backbone using Adam~\citep{kingma2015adam} with learning rate $2 \times 10^{-4}$.
+
+The full procedure is given in Algorithm~\ref{alg:ucdpa}.
+
+\begin{algorithm}[t]
+\caption{UCDPA: Uncertainty-Calibrated Dual-Path Adaptation}
+\label{alg:ucdpa}
+\begin{algorithmic}[1]
+\Require Source model $\theta_0$; data stream $\{\bx_t\}_{t=1}^{T}$; hyperparameters $\tau_c, \tau_u, T_c, T_u, \lambda_\mathrm{come}, \lambda_\mathrm{cal}, \lambda_\mathrm{fpa}, m, \beta, \mathrm{lr}$; batch size $B$.
+\State Initialize LayerNorm parameters $\theta \leftarrow \theta_0$; freeze all non-LayerNorm parameters.
+\State Initialize EMA class counter $n_c \leftarrow 0$ for all $c$; prototype bank $\bmu_c \leftarrow \mathbf{0}$ for all $c$.
+\For{$t = 1, 2, \dots, T$}
+  \State Receive batch $\mathcal{B}_t = \{\bx_i\}_{i=1}^{B}$.
+  \State Compute logits $\bz_i = f_\theta(\bx_i)$, softmax $p_i = \softmax(\bz_i)$, confidence $c_i = \max_k p_{ik}$.
+  \State // Evidential computation (COME).
+  \State $\tilde{\bz}_i \leftarrow \bz_i / (\|\bz_i\|_2 + 1)$;\; $e_{ik} \leftarrow \exp(\ReLU(\tilde{z}_{ik})) - 1$.
+  \State $\alpha_{ik} \leftarrow e_{ik} + 1$;\; $S_i \leftarrow \sum_k \alpha_{ik}$;\; $b_{ik} \leftarrow e_{ik}/S_i$;\; $u_i \leftarrow K/S_i$.
+  \State // UCB routing score (thresholds $\tau_c, \tau_u$; temperatures $T_c, T_u$). \label{alg:ucb-detach}
+  \State $\hat{c}_i \leftarrow \mathrm{sg}(c_i)$, $\hat{u}_i \leftarrow \mathrm{sg}(u_i)$ \hfill // \emph{detach} for routing.
+  \State $b_i \leftarrow \sigma((\hat{c}_i - \tau_c)/T_c) \cdot \sigma((1 - \hat{u}_i - \tau_u)/T_u)$.
+  \State // Pseudo-labels and class-balanced weights (with safeguards).
+  \State $y_i^* \leftarrow \argmax_k p_{ik}$.
+  \State Update EMA counter: $n_c \leftarrow \beta\, n_c + (1-\beta)\, \sum_{i} \1\{y_i^*=c\}$; $n_c \leftarrow \max(n_c, 0.01)$.
+  \State $w_{\mathrm{cb},i} \leftarrow \mathrm{clip}(K \cdot \tilde{w}_{y_i^*},\, 0.5,\, 2.0)$ with $\tilde{w}_c \propto 1/(n_c + \epsilon)$.
+  \State // Path 1: conservative entropy.
+  \State $\Loss_\mathrm{come,i} \leftarrow (1-\lambda_\mathrm{come})\,H(p_i) + \lambda_\mathrm{come}\,H_\mathrm{opinion}(\bo_i)$.
+  \State // Path 2: pseudo-label cross-entropy, scale-normalized (batch-mean detached).
+  \State $\tilde{\Loss}_\mathrm{pl,i} \leftarrow \Loss_\mathrm{pl,i} \cdot \mathrm{sg}(\E_\mathcal{B}[\Loss_\mathrm{come}]) / (\mathrm{sg}(\E_\mathcal{B}[\Loss_\mathrm{pl}]) + \epsilon)$.
+  \State // Dual-path loss (with detached UCB routing $b_i$).
+  \State $\Loss_\mathrm{dual} \leftarrow \tfrac{1}{B}\sum_i [\mathrm{sg}(1-b_i)\,w_{\mathrm{cb},i}\,\Loss_\mathrm{come,i} + \mathrm{sg}(b_i)\,w_{\mathrm{cb},i}\,\tilde{\Loss}_\mathrm{pl,i}]$.
+  \State // Calibration regularizer ($c_i, u_i$ \textbf{not} detached --- gradient flows to $\theta$). \label{alg:cal-no-detach}
+  \State $\Loss_\mathrm{cal} \leftarrow |\mathrm{mean}(c_i) - \mathrm{mean}(1 - u_i)|$.
+  \State // Feature prototype alignment.
+  \State Extract penultimate features $\bff_i$; update prototypes $\bmu_c \leftarrow m\,\bmu_c + (1-m)\,\mathrm{mean}_{i:y_i^*=c}\,\bff_i$.
+  \State $\Loss_\mathrm{fpa} \leftarrow \frac{1}{B}\sum_i \mathrm{CE}(\mathrm{sim}(\bff_i, \bmu_\cdot)/T_\mathrm{fpa},\, y_i^*)$.
+  \State // Total loss and update.
+  \State $\Loss \leftarrow \Loss_\mathrm{dual} + \lambda_\mathrm{cal}\,\Loss_\mathrm{cal} + \lambda_\mathrm{fpa}\,\Loss_\mathrm{fpa}$.
+  \State Update LayerNorm parameters $\theta$ via Adam on $\Loss$ with learning rate $\mathrm{lr}$.
+\EndFor
+\end{algorithmic}
+\end{algorithm}
+
+\paragraph{Notation.}
+$\mathrm{sg}(\cdot)$ denotes stop-gradient (detach). Thresholds $\tau_c, \tau_u \in [0,1]$ control routing boundary; temperatures $T_c, T_u > 0$ control its smoothness. These are distinct quantities; the algorithm uses $\tau_c$ (not $T_c$) as the confidence threshold and $T_c$ as its temperature.
+
+\paragraph{Complexity.}
+The evidential computation, UCB score, calibration regularizer, and class-balanced reweighting add only $O(BK)$ operations per batch. The prototype bank adds $O(Kd)$ memory and $O(Bd)$ per-batch update cost. The total overhead is modest (Section~\ref{sec:exp:efficiency}).

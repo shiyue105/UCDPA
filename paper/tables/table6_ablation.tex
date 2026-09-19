@@ -1,0 +1,16 @@
+\begin{table}[t]
+\centering
+\caption{Ablation study on ImageNet-C (ViT-B/16, mean over 19 corruptions, severity 1--5, 3 seeds). ``Full'' is the complete UCDPA model. Each row removes one component. $\Delta$ is the accuracy drop relative to Full.}
+\label{tab:ablation}
+\begin{tabular}{lcc}
+\toprule
+Variant & Accuracy (\%) & $\Delta$ vs.\ Full \\
+\midrule
+\textbf{Full UCDPA} & \ablationfull & --- \\
+\quad w/o UCB routing (fixed $b_i = 0.5$) & \ablationnoucb & $-$\ablationfull$+$\ablationnoucb \\
+\quad w/o calibration regularizer ($\lambda_\mathrm{cal}=0$) & \ablationnocal & $-$\ablationfull$+$\ablationnocal \\
+\quad w/o class balance ($w_{\mathrm{cb},i}=1$) & \ablationnocb & $-$\ablationfull$+$\ablationnocb \\
+\quad w/o feature prototype alignment ($\lambda_\mathrm{fpa}=0$) & \ablationnofpa & $-$\ablationfull$+$\ablationnofpa \\
+\bottomrule
+\end{tabular}
+\end{table}

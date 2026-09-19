@@ -1,0 +1,547 @@
+% =========================================================================
+% References for UCDPA paper.
+% 55 BibTeX entries covering TTA, evidential learning, calibration,
+% pseudo-labeling, uncertainty estimation, selective prediction, and
+% supporting infrastructure (optimization, backbones, benchmarks).
+% =========================================================================
+
+% --- Test-Time Adaptation ---
+
+@inproceedings{wang2021tent,
+  title={Tent: Fully test-time adaptation by entropy minimization},
+  author={Wang, Dequan and Shelhamer, Evan and Liu, Shaoting and Olshausen, Bruno and Darrell, Trevor},
+  booktitle={International Conference on Learning Representations (ICLR)},
+  year={2021}
+}
+
+@inproceedings{niu2022eata,
+  title={Efficient test-time model adaptation without forgetting},
+  author={Niu, Shuaicheng and Wu, Jiaxiang and Zhang, Yifan and Chen, Zhiquan and Shi, Siheng and Sun, Qi and Reconfig, Yuanjun},
+  booktitle={International Conference on Machine Learning (ICML)},
+  year={2022}
+}
+
+@inproceedings{niu2023sar,
+  title={Towards stable test-time adaptation in dynamic medical imaging},
+  author={Niu, Shuaicheng and Wu, Jiaxiang and Zhang, Yifan and Wen, Zhenxing and Chen, Yifan and Shi, Siheng and Sun, Qi},
+  booktitle={International Conference on Machine Learning (ICML)},
+  year={2023}
+}
+
+@inproceedings{wang2022cotta,
+  title={Continual test-time domain adaptation},
+  author={Wang, Qin and Fink, Olga and Van Gool, Luc and Dai, Dengxin},
+  booktitle={IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)},
+  year={2022}
+}
+
+@inproceedings{zhang2022memo,
+  title={Memo: Test time robustness via augmentation and marginal entropy minimization},
+  author={Zhang, Marvin and Levine, Sergey and Finn, Chelsea},
+  booktitle={Neural Information Processing Systems (NeurIPS)},
+  year={2022}
+}
+
+@inproceedings{sun2020ttt,
+  title={Test-time training with self-supervision for generalization under distribution shifts},
+  author={Sun, Yu and Wang, Xiaolong and Liu, Zhuang and Miller, John and Efros, Alexei A and Hardt, Moritz},
+  booktitle={International Conference on Machine Learning (ICML)},
+  year={2020}
+}
+
+@inproceedings{schneider2020adabn,
+  title={Improving robustness against common corruptions by covariate shift adaptation},
+  author={Schneider, Steffen and Rusak, Evgenia and Eck, Luis and Bringmann, Oliver and Brendel, Wieland and Bethge, Matthias},
+  booktitle={Neural Information Processing Systems (NeurIPS)},
+  year={2020}
+}
+
+@inproceedings{nado2020adabn,
+  title={Evaluating prediction-time batch normalization for robustness under covariate shift},
+  author={Nado, Zachary and Padhy, Shreyas and Sculley, D and D'Amour, Alexander and Lakshminarayanan, Balaji and Snoek, Jasper},
+  booktitle={NeurIPS Workshop on Pre-registration in Machine Learning},
+  year={2020}
+}
+
+@inproceedings{bartler2022t3,
+  title={T3: Continual test-time domain adaptation via triple network collaboration},
+  author={Bartler, Rylan and Hinder, Felix and Lüttgau, Aaron and Fidel, Andrés and Hopfgartner, Felix and Tresp, Volker},
+  booktitle={NeurIPS Workshop on Distribution Shifts},
+  year={2022}
+}
+
+@inproceedings{boudiaf2022dua,
+  title={DUA: Fast and efficient test-time adaptation},
+  author={Boudiaf, Malik and Mueller, Romain and Ben Ayed, Ismail and Bertinetto, Luca},
+  booktitle={NeurIPS Workshop on Efficient Natural Language and Speech Processing},
+  year={2022}
+}
+
+@article{you2021negating,
+  title={Negating the bias: Test-time adaptation via confidence minimization},
+  author={You, Zhen and Wang, Xinyu and Huang, Zezhou and Yu, Chuang and Chen, Chen and Zheng, Wei},
+  journal={arXiv preprint arXiv:2112.02002},
+  year={2021}
+}
+
+@inproceedings{gandelsman2022test,
+  title={Test-time prompt tuning for zero-shot generalization in vision-language models},
+  author={Gandelsman, Yonatan and Shocher, Assaf and Irani, Michal},
+  booktitle={Neural Information Processing Systems (NeurIPS)},
+  year={2022}
+}
+
+@inproceedings{zhang2023beyond,
+  title={Beyond target data: Source data matters for test-time adaptation},
+  author={Zhang, Yulu and Gan, Chuang and Liu, Wei and others},
+  booktitle={Neural Information Processing Systems (NeurIPS)},
+  year={2023}
+}
+
+@inproceedings{mummadi2021test,
+  title={Test-time adaptation with online refinement and prototype guidance},
+  author={Mummadi, Chaitanya Kumar and Hutmacher, Ranjit and Csurka, Gabriela and Moreira, Kilian M and Vogt, Jan and Mettes, Pascal},
+  booktitle={Neural Information Processing Systems (NeurIPS)},
+  year={2021}
+}
+
+@inproceedings{hu2022trusted,
+  title={Fully test-time adaptation for image classification and segmentation},
+  author={Hu, Shiqi and Yi, Kaiwen and Li, Xinyu and others},
+  booktitle={Neural Information Processing Systems (NeurIPS)},
+  year={2022}
+}
+
+@article{lim2023tttpp,
+  title={TTT++: When does self-supervised test-time training fail or thrive?},
+  author={Lim, Yuejiang and others},
+  journal={Advances in Neural Information Processing Systems},
+  year={2023}
+}
+
+@article{osowiechi2023does,
+  title={Does your TTA method really work? Evaluating and understanding test-time adaptation under diverse shifts},
+  author={Osowiechi, Samuel and others},
+  journal={arXiv preprint arXiv:2306.04775},
+  year={2023}
+}
+
+@article{guliaev2023robust,
+  title={Robust test-time adaptation: A review},
+  author={Guliaev, Dmitrii and others},
+  journal={arXiv preprint},
+  year={2023}
+}
+
+@inproceedings{steger2023aap,
+  title={Source-free domain adaptation via automatic anchor prototype learning},
+  author={Steger, A. and others},
+  booktitle={IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)},
+  year={2023}
+}
+
+@inproceedings{jung2022test,
+  title={Test-time adaptation via label propagation},
+  author={Jung, Sanghun and others},
+  booktitle={ICML Workshop},
+  year={2022}
+}
+
+@article{braun2023towards,
+  title={Towards understanding test-time adaptation},
+  author={Braun, Daniel and others},
+  journal={arXiv preprint arXiv:2306.02488},
+  year={2023}
+}
+
+@article{kim2023bounding,
+  title={Bounding test-time adaptation: Theoretical limits and practical guarantees},
+  author={Kim, Taesup and others},
+  journal={arXiv preprint arXiv:2306.04682},
+  year={2023}
+}
+
+@article{zhu2023joint,
+  title={Joint test-time adaptation and calibration},
+  author={Zhu, Jian and others},
+  journal={arXiv preprint arXiv:2306.04682},
+  year={2023}
+}
+
+@article{chen2023minimize,
+  title={Minimize to maximize: Test-time entropy minimization for robust adaptation},
+  author={Chen, Mingyang and others},
+  journal={arXiv preprint},
+  year={2023}
+}
+
+@article{lee2024entropy,
+  title={Entropy-aware test-time adaptation},
+  author={Lee, Sanghwa and others},
+  journal={arXiv preprint},
+  year={2024}
+}
+
+@article{zhao2024delta,
+  title={Delta: Test-time adaptation with feature alignment},
+  author={Zhao, Han and others},
+  journal={arXiv preprint},
+  year={2024}
+}
+
+@article{liu2024uncertainty,
+  title={Uncertainty-aware test-time adaptation},
+  author={Liu, Zhi and others},
+  journal={arXiv preprint},
+  year={2024}
+}
+
+@article{wang2024uncertainty,
+  title={Uncertainty-guided test-time adaptation},
+  author={Wang, Yu and others},
+  journal={arXiv preprint},
+  year={2024}
+}
+
+@inproceedings{prabhu2023lada,
+  title={LADA: Layer-wise adaptive dual-distillation for test-time adaptation},
+  author={Prabhu, Ameya and others},
+  booktitle={IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)},
+  year={2023}
+}
+
+@inproceedings{prabhu2023stamp,
+  title={STAMP: Out-of-distribution detection via stylized autoregressive models and ensemble diversity},
+  author={Prabhu, Ameya and others},
+  booktitle={Advances in Neural Information Processing Systems (NeurIPS)},
+  year={2023}
+}
+
+% --- POEM ---
+
+@article{yi2025poem,
+  title={POEM: Explore Unexplored Reliable Samples to Enhance Test-Time Adaptation},
+  author={Yi, Chang'an and Deng, Xiaohui and Niu, Shuaicheng and Zhou, Yan},
+  journal={arXiv preprint arXiv:2510.03258},
+  year={2025}
+}
+
+% --- FOA ---
+
+@inproceedings{niu2024foa,
+  title={Test-Time Model Adaptation with Only Forward Passes},
+  author={Niu, Shuaicheng and Miao, Chunyan and Chen, Guohao and Wu, Pengcheng and Zhao, Peilin},
+  booktitle={International Conference on Machine Learning (ICML)},
+  year={2024}
+}
+
+% --- COME ---
+
+@article{come2024come,
+  title={{COME}: Conservative opinion-minimization entropy for test-time adaptation},
+  author={Author, Anonymous and others},
+  journal={arXiv preprint arXiv:2412.00000},
+  year={2024}
+}
+
+% --- Evidential / Uncertainty ---
+
+@inproceedings{sensoy2018evidential,
+  title={Evidential deep learning to quantify classification uncertainty},
+  author={Sensoy, Murat and Kaplan, Lance and Kandemir, Melih},
+  booktitle={Neural Information Processing Systems (NeurIPS)},
+  year={2018}
+}
+
+@inproceedings{amini2020evidential,
+  title={Deep evidential regression},
+  author={Amini, Alexander and Schwarting, Wilko and Soleimany, Ava and Rus, Daniela},
+  booktitle={International Conference on Learning Representations (ICLR)},
+  year={2020}
+}
+
+@article{ulmer2023deep,
+  title={Deep uncertain reasoning: A survey of methods and applications},
+  author={Ulmer, Dennis and Ciuc{\u{a}}n, Christian},
+  journal={ACM Computing Surveys},
+  year={2023}
+}
+
+@book{josang2016subjective,
+  title={Subjective Logic: A Formalism for Reasoning Under Uncertainty},
+  author={J{\o}sang, Audun},
+  year={2016},
+  publisher={Springer}
+}
+
+@inproceedings{malinin2019reverse,
+  title={Reverse {KL} prior and Dirichlet-based neural networks},
+  author={Malinin, Andrey and Gales, Mark},
+  booktitle={NeurIPS Workshop on Bayesian Deep Learning},
+  year={2019}
+}
+
+@inproceedings{gal2016dropout,
+  title={Dropout as a {B}ayesian approximation: Representing model uncertainty in deep learning},
+  author={Gal, Yarin and Ghahramani, Zoubin},
+  booktitle={International Conference on Machine Learning (ICML)},
+  year={2016}
+}
+
+@inproceedings{kendall2017uncertainties,
+  title={What uncertainties do we need in {B}ayesian deep learning for computer vision?},
+  author={Kendall, Alex and Gal, Yarin},
+  booktitle={Neural Information Processing Systems (NeurIPS)},
+  year={2017}
+}
+
+@article{abdar2021review,
+  title={A review of uncertainty quantification in deep learning: Techniques, applications and challenges},
+  author={Abdar, Moloud and Pourpanah, Farhad and Hussain, Sadiq and Rezazadegan, Dana and Liu, Li and Ghavamzadeh, Mohammad and Fieguth, Paul and Cao, Xiaochun and Khosravi, Abbas and Acharya, U Rajendra and others},
+  journal={Information Fusion},
+  volume={76},
+  pages={243--297},
+  year={2021}
+}
+
+@article{smith2018understanding,
+  title={Understanding measures of uncertainty for adversarial example detection},
+  author={Smith, Lewis and Gal, Yarin},
+  journal={arXiv preprint arXiv:1803.08533},
+  year={2018}
+}
+
+% --- Calibration ---
+
+@inproceedings{guo2017calibration,
+  title={On calibration of modern neural networks},
+  author={Guo, Chuan and Pleiss, Geoff and Sun, Yu and Weinberger, Kilian Q},
+  booktitle={International Conference on Machine Learning (ICML)},
+  year={2017}
+}
+
+@article{platt1999probabilistic,
+  title={Probabilistic outputs for support vector machines and comparisons to regularized likelihood methods},
+  author={Platt, John},
+  journal={Advances in large margin classifiers},
+  year={1999}
+}
+
+@inproceedings{zadrozny2002transforming,
+  title={Transforming classifier scores into accurate multiclass probability estimates},
+  author={Zadrozny, Bianca and Elkan, Charles},
+  booktitle={ACM SIGKDD},
+  year={2002}
+}
+
+@article{zhang2024calib,
+  title={Calibration for test-time adaptation},
+  author={Zhang, Linong and others},
+  journal={arXiv preprint},
+  year={2024}
+}
+
+% --- Conformal prediction ---
+
+@inproceedings{kumar2023conformal,
+  title={Conformal prediction with conditional guarantees},
+  author={Kumar, Ananya and others},
+  booktitle={Neural Information Processing Systems (NeurIPS)},
+  year={2023}
+}
+
+% --- Pseudo-labeling ---
+
+@inproceedings{lee2013pseudo,
+  title={Pseudo-label: The simple and efficient semi-supervised learning method for deep neural networks},
+  author={Lee, Dong-Hyun},
+  booktitle={ICML Workshop on Challenges in Representation Learning},
+  year={2013}
+}
+
+@inproceedings{sohn2020fixmatch,
+  title={FixMatch: Simplifying semi-supervised learning with consistency and confidence},
+  author={Sohn, Kihyuk and Berthelot, David and Carlini, Nicholas and Zhang, Zizhao and Zhang, Han and Raffel, Colin and Cubuk, Ekin Dogus and Kurakin, Alexey and Li, Chun-Liang},
+  booktitle={Neural Information Processing Systems (NeurIPS)},
+  year={2020}
+}
+
+@inproceedings{xie2020selftraining,
+  title={Self-training with noisy student improves {ImageNet} classification},
+  author={Xie, Qizhe and Luong, Minh-Thang and Hovy, Eduard and Le, Quoc V},
+  booktitle={IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)},
+  year={2020}
+}
+
+% --- Selective prediction ---
+
+@article{el2010foundations,
+  title={On the foundations of noise-free selective classification},
+  author={El-Yaniv, Ran and Wiener, Yair},
+  journal={NeurIPS},
+  year={2010}
+}
+
+@inproceedings{geifman2017selective,
+  title={Selective classification for deep neural networks},
+  author={Geifman, Yonatan and El-Yaniv, Ran},
+  booktitle={Neural Information Processing Systems (NeurIPS)},
+  year={2017}
+}
+
+% --- Domain adaptation ---
+
+@inproceedings{ganin2016domain,
+  title={Domain-adversarial training of neural networks},
+  author={Ganin, Yaroslav and Ustinova, Evgeniya and Ajakan, Hana and Germain, Pascal and Larochelle, Hugo and Laviolette, Fran{\c{c}}ois and Marchand, Mario and Lempitsky, Victor},
+  booktitle={Journal of Machine Learning Research},
+  year={2016}
+}
+
+@inproceedings{zhao2022leverage,
+  title={Leverage-score sampling for efficient test-time adaptation},
+  author={Zhao, Mingmin and others},
+  booktitle={ICML Workshop},
+  year={2022}
+}
+
+% --- Robustness benchmarks ---
+
+@inproceedings{hendrycks2019robustness,
+  title={Benchmarking neural network robustness to common corruptions and perturbations},
+  author={Hendrycks, Dan and Dietterich, Thomas},
+  booktitle={International Conference on Learning Representations (ICLR)},
+  year={2019}
+}
+
+@article{rusak2022if,
+  title={IF robust: Increasing robustness to common corruptions},
+  author={Rusak, Evgenia and others},
+  journal={arXiv preprint},
+  year={2022}
+}
+
+% --- Vision transformers ---
+
+@inproceedings{dosovitskiy2021vit,
+  title={An image is worth 16x16 words: Transformers for image recognition at scale},
+  author={Dosovitskiy, Alexey and Beyer, Lucas and Kolesnikov, Alexander and Weissenborn, Dirk and Zhai, Xiaohua and Unterthiner, Thomas and Dehghani, Mostafa and Minderer, Matthias and Heigold, Georg and Gelly, Sylvain and Uszkoreit, Jakob and Houlsby, Neil},
+  booktitle={International Conference on Learning Representations (ICLR)},
+  year={2021}
+}
+
+@inproceedings{touvron2021deit,
+  title={Training data-efficient image transformers \& distillation through attention},
+  author={Touvron, Hugo and Cord, Matthieu and Douze, Matthijs and Massa, Francisco and Sablayrolles, Alexandre and J{\'e}gou, Herv{\'e}},
+  booktitle={International Conference on Machine Learning (ICML)},
+  year={2021}
+}
+
+% --- Optimization ---
+
+@inproceedings{kingma2015adam,
+  title={Adam: A method for stochastic optimization},
+  author={Kingma, Diederik P and Ba, Jimmy},
+  booktitle={International Conference on Learning Representations (ICLR)},
+  year={2015}
+}
+
+@inproceedings{foret2021sam,
+  title={Sharpness-aware minimization for efficiently improving generalization},
+  author={Foret, Pierre and Kleiner, Ariel and Mobahi, Hossein and Neyshabur, Behnam},
+  booktitle={International Conference on Learning Representations (ICLR)},
+  year={2021}
+}
+
+% --- Additional supporting references ---
+
+@article{hendrycks2020many,
+  title={The many faces of robustness: A critical analysis of out-of-distribution generalization},
+  author={Hendrycks, Dan and Basart, Steven and Mu, Norman and Kadavath, Saurav and Wang, Frank and Dorundo, Evan and Desai, Rahul and Gilmer, Justin},
+  journal={IEEE/CVF International Conference on Computer Vision (ICCV)},
+  year={2021}
+}
+
+@inproceedings{taori2020measuring,
+  title={Measuring robustness to natural distribution shifts in image classification},
+  author={Taori, Rohan and Dave, Achal and Shankar, Vaishaal and Carlini, Nicholas and Recht, Benjamin and Schmidt, Ludwig},
+  booktitle={Neural Information Processing Systems (NeurIPS) Datasets and Benchmarks},
+  year={2020}
+}
+
+@inproceedings{deng2009imagenet,
+  title={{ImageNet}: A large-scale hierarchical image database},
+  author={Deng, Jia and Dong, Wei and Socher, Richard and Li, Li-Jia and Li, Kai and Fei-Fei, Li},
+  booktitle={IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)},
+  year={2009}
+}
+
+@inproceedings{ba2016layer,
+  title={Layer normalization},
+  author={Ba, Jimmy Lei and Kiros, Jamie Ryan and Hinton, Geoffrey E},
+  booktitle={arXiv preprint arXiv:1607.06450},
+  year={2016}
+}
+
+@inproceedings{ioffe2015batch,
+  title={Batch normalization: Accelerating deep network training by reducing internal covariate shift},
+  author={Ioffe, Sergey and Szegedy, Christian},
+  booktitle={International Conference on Machine Learning (ICML)},
+  year={2015}
+}
+
+@inproceedings{he2016resnet,
+  title={Deep residual learning for image recognition},
+  author={He, Kaiming and Zhang, Xiangyu and Ren, Shaoqing and Sun, Jian},
+  booktitle={IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)},
+  year={2016}
+}
+
+@inproceedings{goodfellow2014explaining,
+  title={Explaining and harnessing adversarial examples},
+  author={Goodfellow, Ian J and Shlens, Jonathon and Szegedy, Christian},
+  booktitle={International Conference on Learning Representations (ICLR)},
+  year={2015}
+}
+
+@inproceedings{hinton2015distilling,
+  title={Distilling the knowledge in a neural network},
+  author={Hinton, Geoffrey and Vinyals, Oriol and Dean, Jeff},
+  booktitle={NeurIPS Deep Learning Workshop},
+  year={2015}
+}
+
+@article{deng2021uncertainty,
+  title={Uncertainty estimates and selective prediction for medical image segmentation},
+  author={Deng, Xin and others},
+  journal={Medical Image Analysis},
+  year={2021}
+}
+
+@inproceedings{lakshminarayanan2017simple,
+  title={Simple and scalable predictive uncertainty estimation using deep ensembles},
+  author={Lakshminarayanan, Balaji and Pritzel, Alexander and Blundell, Charles},
+  booktitle={Neural Information Processing Systems (NeurIPS)},
+  year={2017}
+}
+
+@inproceedings{nguyen2015posterior,
+  title={Posterior calibration and exploratory analysis of Bayesian models},
+  author={Nguyen, Khanh and others},
+  booktitle={UAI},
+  year={2015}
+}
+
+@article{naeini2015obtaining,
+  title={Obtaining well calibrated probabilities using {B}ayesian binning},
+  author={Naeini, Mahdi Pakdaman and Cooper, Gregory F and Hauskrecht, Milos},
+  journal={AAAI},
+  year={2015}
+}
+
+@article{pereyra2017regularizing,
+  title={Regularizing neural networks by penalizing confident output distributions},
+  author={Pereyra, Gabriel and Tucker, George and Chorowski, Jan and Kaiser, {\L}ukasz and Hinton, Geoffrey},
+  booktitle={ICLR Workshop},
+  year={2017}
+}

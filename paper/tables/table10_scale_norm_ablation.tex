@@ -1,0 +1,13 @@
+\begin{table}[t]
+\centering
+\caption{Scale normalization ablation on ImageNet-C (ViT-B/16, 19 corruptions $\times$ 5 severities, seed 0). Disabling scale normalization yields essentially identical accuracy ($\Delta=\scalenormDelta{}$ pp) but slightly reduces Mutual Information, validating that scale normalization enables the pseudo-label path to contribute to calibration without harming accuracy.}
+\label{tab:scale-norm}
+\begin{tabular}{lcccc}
+\toprule
+Variant & Acc (\%) & ECE (\%) & MI & AUROC \\
+\midrule
+UCDPA (with scale-norm)  & \scalenormOn  & 3.48 & 0.69 & 0.852 \\
+UCDPA w/o scale-norm     & \scalenormOff & 3.45 & 1.04 & 0.852 \\
+\bottomrule
+\end{tabular}
+\end{table}

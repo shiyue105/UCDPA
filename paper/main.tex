@@ -1,0 +1,251 @@
+% UCDPA: Uncertainty-Calibrated Dual-Path Adaptation for Test-Time Adaptation
+% NeurIPS-format paper. Uses article class with NeurIPS-compatible styling.
+% To port to the official NeurIPS template, replace the documentclass line
+% with \documentclass{neurips_2024} and remove the manual geometry/styling
+% overrides below that duplicate the NeurIPS style.
+
+\documentclass[10pt,letterpaper,twocolumn]{article}
+
+% AAAI-compatible tight geometry (two-column, ~15-page target).
+\usepackage[margin=0.75in,columnsep=0.25in]{geometry}
+\usepackage{microtype}
+\usepackage{times}
+
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{hyperref}
+\usepackage[round,sort&compress]{natbib}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{makecell}
+\usepackage{balance}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=red,
+  citecolor=blue,
+  urlcolor=magenta,
+  breaklinks=true
+}
+
+% Theorem environments.
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+\newtheorem{proposition}{Proposition}
+\newtheorem{corollary}{Corollary}
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}
+\newtheorem{assumption}{Assumption}
+\theoremstyle{remark}
+\newtheorem{remark}{Remark}
+
+% Convenience macros.
+\DeclareMathOperator*{\argmax}{arg\,max}
+\DeclareMathOperator*{\argmin}{arg\,min}
+\DeclareMathOperator{\softmax}{softmax}
+\DeclareMathOperator{\ReLU}{ReLU}
+\DeclareMathOperator{\sgn}{sgn}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\1}{\mathbf{1}}
+\newcommand{\bx}{\mathbf{x}}
+\newcommand{\bz}{\mathbf{z}}
+\newcommand{\bff}{\mathbf{f}}
+\newcommand{\balpha}{\boldsymbol{\alpha}}
+\newcommand{\be}{\mathbf{e}}
+\newcommand{\bp}{\mathbf{p}}
+\newcommand{\bo}{\mathbf{o}}
+\newcommand{\bb}{\mathbf{b}}
+\newcommand{\btau}{\boldsymbol{\tau}}
+\newcommand{\bmu}{\boldsymbol{\mu}}
+\newcommand{\Loss}{\mathcal{L}}
+\newcommand{\TBD}{\textsc{tbd}}
+
+% =====================================================================
+% PLACEHOLDER MACROS FOR NUMERICAL RESULTS.
+% All numerical experimental results are defined here as macros so that a
+% downstream generate_paper.py script can substitute real values once the
+% experiments finish. Every macro defaults to the literal token "TBD" so the
+% paper compiles cleanly before any numbers are available.
+%
+% To fill in results, a script can simply redefine these \newcommand values
+% (e.g. by sed-replacing "\newcommand{\ucdpaacc}{69.20}" with the measured
+% value) without touching the section files.
+% =====================================================================
+
+% --- Main accuracy (Table 1) ---
+\newcommand{\sourceacc}{57.26}
+\newcommand{\tentacc}{63.03}
+\newcommand{\eataacc}{62.84}
+\newcommand{\saracc}{61.90}
+\newcommand{\comeacc}{66.13}
+\newcommand{\tentcomeacc}{63.22}
+\newcommand{\ucdpaacc}{69.20}
+\newcommand{\ucdpadelta}{+3.07}
+
+% --- Expected Calibration Error (Table 4) ---
+\newcommand{\sourceece}{4.82}
+\newcommand{\tentece}{7.93}
+\newcommand{\eataece}{7.41}
+\newcommand{\sarece}{7.20}
+\newcommand{\comeece}{7.22}
+\newcommand{\tentcomeece}{7.74}
+\newcommand{\ucdpaece}{3.48}
+
+% --- Maximum Calibration Error (Table 4) ---
+\newcommand{\sourcemce}{8.52}
+\newcommand{\tentmce}{14.28}
+\newcommand{\eatamce}{13.79}
+\newcommand{\sarmce}{13.24}
+\newcommand{\comemce}{12.21}
+\newcommand{\tentcomemce}{14.06}
+\newcommand{\ucdpamce}{7.53}
+
+% --- AUROC for error detection (Table 5) ---
+\newcommand{\sourceauroc}{83.97}
+\newcommand{\tentauroc}{83.55}
+\newcommand{\eataauroc}{84.06}
+\newcommand{\sarauroc}{84.37}
+\newcommand{\comeauroc}{84.34}
+\newcommand{\tentcomeauroc}{83.60}
+\newcommand{\ucdpaauroc}{85.22}
+
+% --- Mutual Information (Table 4) ---
+\newcommand{\sourcemi}{1.0990}
+\newcommand{\tentmi}{0.4771}
+\newcommand{\eatami}{0.4919}
+\newcommand{\sarmi}{0.5127}
+\newcommand{\comemi}{1.3608}
+\newcommand{\tentcomemi}{0.4839}
+\newcommand{\ucdpami}{0.6943}
+
+% --- Predictive Entropy (Table 4) ---
+\newcommand{\sourcepe}{2.4565}
+\newcommand{\tentpe}{1.4631}
+\newcommand{\eatape}{1.5081}
+\newcommand{\sarpe}{1.5762}
+\newcommand{\comepe}{2.4656}
+\newcommand{\tentcomepe}{1.4673}
+\newcommand{\ucdpape}{1.5608}
+
+% --- Ablation study (Table 6) ---
+\newcommand{\ablationfull}{69.20}
+\newcommand{\ablationnoucb}{68.93}
+\newcommand{\ablationnocal}{69.21}
+\newcommand{\ablationnocb}{68.72}
+\newcommand{\ablationnofpa}{69.20}
+
+% --- Statistical significance ---
+\newcommand{\pvalue}{0.001}
+
+% --- Per-severity accuracy (Table 2) ---
+\newcommand{\ucdpasevone}{77.43}
+\newcommand{\ucdpasevtwo}{73.55}
+\newcommand{\ucdpasevthree}{70.82}
+\newcommand{\ucdpasevfour}{65.86}
+\newcommand{\ucdpasevfive}{58.32}
+\newcommand{\comesevone}{76.14}
+\newcommand{\comesevtwo}{71.44}
+\newcommand{\comesevthree}{68.10}
+\newcommand{\comesevfour}{62.25}
+\newcommand{\comesevfive}{52.70}
+
+% --- Per-corruption-family accuracy (Table 3) ---
+\newcommand{\ucdpanoise}{68.46}
+\newcommand{\ucdpablur}{64.78}
+\newcommand{\ucdpaweather}{68.33}
+\newcommand{\ucdpadigital}{73.57}
+\newcommand{\ucdpaextra}{74.69}
+\newcommand{\comenoise}{66.00}
+\newcommand{\comeblur}{61.36}
+\newcommand{\comeweather}{63.67}
+\newcommand{\comedigital}{71.32}
+\newcommand{\comeextra}{72.79}
+
+% --- UCB score analysis ---
+\newcommand{\ucbmeancertain}{0.7040}
+\newcommand{\ucbmeanuncertain}{0.2692}
+\newcommand{\ucbauroc}{84.79}
+\newcommand{\ucbseparation}{0.4349}
+
+% --- Efficiency ---
+\newcommand{\ucdpatimeperbatch}{0.7541}
+\newcommand{\cometimeperbatch}{0.7492}
+\newcommand{\ucdpamemory}{10072.89}
+
+% --- Bootstrap confidence intervals (for the UCDPA--COME accuracy *difference*, in percentage points) ---
+\newcommand{\ucdpacilow}{1.95}
+\newcommand{\ucdpacihigh}{4.19}
+\newcommand{\comecilow}{64.78}
+\newcommand{\comecihigh}{67.41}
+
+% --- Cross-backbone (Table 7) ---
+\newcommand{\vitSourceAcc}{59.41}
+\newcommand{\vitComeAcc}{68.10}
+\newcommand{\vitUcdpaAcc}{70.83}
+\newcommand{\vitUcdpaDelta}{+2.73}
+\newcommand{\cifarSourceAcc}{62.66}
+\newcommand{\cifarComeAcc}{62.84}
+\newcommand{\cifarUcdpaAcc}{63.01}
+\newcommand{\cifarUcdpaDelta}{+0.17}
+
+% --- CoTTA, MEMO, POEM, FOA baselines (severity 3, seed 0, ViT-B/16, ImageNet-C) ---
+\newcommand{\cottaAcc}{63.44}
+\newcommand{\memoAcc}{67.32}
+\newcommand{\poemAcc}{66.75}
+\newcommand{\foaAcc}{59.41}  % complete (19/19 corruptions)
+
+% --- Sensitivity sweep (Table 8) ---
+\newcommand{\sensRangeLow}{65.45}
+\newcommand{\sensRangeHigh}{67.99}
+\newcommand{\sensRange}{2.54}
+
+% --- Batch size (Table 9) ---
+\newcommand{\bsOne}{73.01}
+\newcommand{\bsEight}{74.30}
+\newcommand{\bsThirtyTwo}{73.57}
+\newcommand{\bsSixtyFour}{72.46}
+
+% --- Scale normalization ablation (Table 10) ---
+\newcommand{\scalenormOn}{69.20}
+\newcommand{\scalenormOff}{69.13}
+\newcommand{\scalenormDelta}{0.07}
+
+% --- Runtime overhead (Q2) ---
+\newcommand{\ucdpaRuntime}{294.84}
+\newcommand{\comeRuntime}{292.93}
+\newcommand{\ucdpaRuntimeOverhead}{+0.66}
+\newcommand{\ucdpaMemOverhead}{1.6}
+
+\title{Uncertainty-Calibrated Dual-Path Adaptation for Test-Time Adaptation}
+
+\author{%
+  Anonymous Authors\\
+  Paper under double-blind review\\
+}
+
+\date{}
+
+\begin{document}
+\maketitle
+
+\input{abstract}
+\input{introduction}
+\input{related_work}
+\input{method}
+\input{experiments}
+\input{discussion}
+\input{conclusion}
+
+\bibliographystyle{plainnat}
+\bibliography{refs}
+
+\newpage
+\input{appendix}
+
+\end{document}

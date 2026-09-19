@@ -1,0 +1,21 @@
+\begin{table}[t]
+\centering
+\caption{Main accuracy comparison on ImageNet-C (ViT-B/16, mean over 19 corruptions, severity 1--5, 3 seeds). Higher is better. $\Delta = \text{UCDPA} - \text{COME}$ is the accuracy gain in percentage points. $p$-value from a paired permutation test (10{,}000 permutations) of the null hypothesis $H_0\colon \Delta = 0$; 95\% CI from 10{,}000 nonparametric bootstrap resamples over the 57 (corruption, seed) units, reported on $\Delta$ (in pp).}
+\label{tab:main}
+\begin{tabular}{lcc}
+\toprule
+Method & Accuracy (\%) & Notes \\
+\midrule
+Source-only & \sourceacc & No adaptation \\
+Tent~\citep{wang2021tent} & \tentacc & Entropy minimization \\
+EATA~\citep{niu2022eata} & \eataacc & Reliable entropy + Fisher \\
+SAR~\citep{niu2023sar} & \saracc & Sharpness-aware entropy \\
+COME~\citep{come2024come} & \comeacc & Conservative opinion entropy \\
+Tent-COME & \tentcomeacc & Tent + opinion entropy \\
+\textbf{UCDPA (ours)} & \ucdpaacc & Dual-path + UCB + cal + FPA \\
+\midrule
+$\Delta$ (UCDPA $-$ COME) & \ucdpadelta & $p < \pvalue$ \\
+95\% CI of $\Delta$ (pp) & $[\ucdpacilow, \ucdpacihigh]$ & Bootstrap \\
+\bottomrule
+\end{tabular}
+\end{table}

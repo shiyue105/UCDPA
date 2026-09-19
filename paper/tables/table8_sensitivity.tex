@@ -1,0 +1,17 @@
+\begin{table}[t]
+\centering
+\caption{Sensitivity to routing hyperparameters on ImageNet-C (ViT-B/16, 5 representative corruptions $\times$ severity 3, seed 0). Each hyperparameter is swept one-at-a-time while the others are held at default. Accuracy is stable within \sensRange{} percentage points across the tested range. Default values in bold.}
+\label{tab:sensitivity}
+\begin{tabular}{lccccc}
+\toprule
+ & \multicolumn{5}{c}{Accuracy (\%)} \\
+\cmidrule(lr){2-6}
+Hyperparameter & Value 1 & Value 2 & Value 3 (default) & Value 4 & Value 5 \\
+\midrule
+$\tau_c$ & 65.45 & 66.95 & \textbf{67.11} & 67.64 & 67.18 \\
+$\tau_u$ & 67.51 & 67.12 & \textbf{67.50} & 67.99 & 67.74 \\
+$T_c$    & 67.63 & 67.72 & \textbf{67.72} & 67.80 & 67.66 \\
+$T_u$    & 67.73 & 67.72 & \textbf{67.72} & 67.78 & 67.87 \\
+\bottomrule
+\end{tabular}
+\end{table}

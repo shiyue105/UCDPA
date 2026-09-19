@@ -1,0 +1,18 @@
+\begin{table}[t]
+\centering
+\caption{Error detection AUROC on ImageNet-C (ViT-B/16, mean over 19 corruptions, severity 1--5, 3 seeds). The binary task is correct-vs-incorrect (using ground-truth labels only for evaluation). Higher is better. Evidential methods use $1 - u_i$ as the score; non-evidential methods use $c_i$.}
+\label{tab:auroc}
+\begin{tabular}{lc}
+\toprule
+Method & AUROC $\uparrow$ \\
+\midrule
+Source-only & \sourceauroc \\
+Tent~\citep{wang2021tent} & \tentauroc \\
+EATA~\citep{niu2022eata} & \eataauroc \\
+SAR~\citep{niu2023sar} & \sarauroc \\
+COME~\citep{come2024come} & \comeauroc \\
+Tent-COME & \tentcomeauroc \\
+\textbf{UCDPA (ours)} & \ucdpaauroc \\
+\bottomrule
+\end{tabular}
+\end{table}

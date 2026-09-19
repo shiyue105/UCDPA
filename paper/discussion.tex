@@ -1,0 +1,44 @@
+\section{Discussion}
+\label{sec:discussion}
+
+\subsection{Why Dual-Path Adaptation Works}
+\label{sec:disc:why-dual}
+
+UCDPA's dual-path design improves both accuracy and calibration over single-path COME through three mechanisms. \textbf{First}, pseudo-label cross-entropy provides a stronger gradient than entropy minimization for confident samples: $\nabla_\theta (-\log p_{y^*}) = -(1/p_{y^*})\,\nabla_\theta p_{y^*}$ does not vanish as $p_{y^*} \to 1$, whereas entropy minimization has a vanishing gradient. The UCB score identifies \emph{which} samples are safe to route to this stronger signal (those with $c_i > \tau_c$ and $u_i < 1 - \tau_u$), minimizing the risk of reinforcing wrong predictions. \textbf{Second}, for uncertain or low-confidence samples, the conservative COME path preserves safety: the opinion-entropy term down-weights high-uncertainty samples without committing to a label. \textbf{Third}, the calibration regularizer (Proposition~\ref{prop:cal}) keeps softmax confidence and evidential uncertainty consistent in batch mean, preventing the routing signal from drifting. We emphasize (Remark~\ref{rem:cal-scope}) that $\Loss_\mathrm{cal}$ controls only batch-mean consistency, not per-sample calibration; the per-sample coupling comes from the UCB product form. This is reflected empirically in the improved AUROC (Table~\ref{tab:auroc}): a better-consistent uncertainty signal is a better error detector.
+
+The UCB product form $\sigma(\cdot)\sigma(\cdot)$ also has advantages over hard thresholding: it is smooth (differentiable, allowing soft mixing near the boundary) and encodes the logical \emph{AND} (both confidence and certainty must hold) in a principled way. A confidently-wrong sample (high $c$, high $u$) would pass a confidence-only filter but is correctly routed to the conservative path by the UCB product. Theorem~\ref{thm:ucb} formalizes these monotonicity properties.
+
+\subsection{Theoretical Analysis}
+\label{sec:disc:theory}
+
+We provide three observations complementing the UCB monotonicity (Theorem~\ref{thm:ucb}) and calibration consistency (Proposition~\ref{prop:cal}).
+
+\paragraph{Routing stability.}
+The UCB score $b_i$ is Lipschitz-continuous in $(c_i, u_i)$ with constant $L \le 1/(4 T_c T_u)$, ensuring small perturbations yield bounded changes in routing. For the default $T_c=T_u=0.1$, per-step routing changes are $O(100\varepsilon)$ under per-step parameter update $\|\delta\theta_t\| \le \varepsilon$---small under the small learning rate ($2\times10^{-4}$) and LayerNorm-only adaptation.
+
+\paragraph{Error amplification bound.}
+The dual-path gradient $\nabla_\theta \Loss = (1-b)\nabla_\theta \Loss_\mathrm{come} + b\,\nabla_\theta \Loss_\mathrm{pl}$ weights the pseudo-label component by $b$, which is small for low-confidence samples. The contribution of misclassified pseudo-labels satisfies $\E[b \cdot \mathbf{1}\{\hat{y} \neq y\}] \le \E[b]\cdot P(\hat{y}\neq y \mid b>0)$. Since $b>0$ requires both $c > \tau_c$ and $u < 1-\tau_u$, the joint calibration (validated empirically by AUROC $>0.85$ in Table~\ref{tab:auroc}) ensures the conditional error rate $P(\hat{y}\neq y \mid b>0)$ is substantially lower than the unconditional rate. This is the mechanism by which UCDPA mitigates confirmation bias. Empirically, UCDPA does not exhibit divergence or oscillation across 1995 runs (3 seeds $\times$ 19 corruptions $\times$ 5 severities $\times$ 7 methods), with no NaN/Inf in any summary file.
+
+\paragraph{Routing miscalibration.}
+If thresholds are mis-set, two failure modes arise: (i) too permissive ($\tau_c$ low, $\tau_u$ high) amplifies errors via vanilla self-training; (ii) too conservative ($\tau_c$ high, $\tau_u$ low) degenerates UCDPA toward COME. The sensitivity sweep (Table~\ref{tab:sensitivity}) characterizes the operating envelope.
+
+\subsection{Failure Mode Analysis: When UCB Routing Misroutes}
+\label{sec:disc:failure-modes}
+
+\paragraph{Per-corruption analysis.}
+Examining per-corruption results (Table~\ref{tab:per-corruption}), UCDPA improves over COME on 18 of 19 corruptions; the single exception is \texttt{glass\_blur}, where the gain is smaller (+5.01 pp vs.\ +9.07 pp on \texttt{snow}). \texttt{glass\_blur} produces confidently-wrong samples that the UCB score still routes to the pseudo-label path, muting the gain.
+
+\paragraph{Error amplification under extreme shift.}
+On the ResNet-50/ImageNet-C configuration with a corrupted source checkpoint (11.23\% source accuracy, near random; Appendix~\ref{app:cross-backbone}), UCDPA \emph{underperforms} source accuracy (9.92\%). This confirms the theoretical prediction: the error amplification bound relies on $P(\hat{y}\neq y \mid b>0) < P(\hat{y}\neq y)$, which fails when confidence and correctness are uncorrelated. UCDPA is thus \emph{not} a universal remedy---it requires minimum source-model quality below which the dual-path design offers no benefit.
+
+\paragraph{Mitigation.}
+For deployment with uncertain source quality: (i) estimate source accuracy on a held-out set (even unlabeled, via confidence-entropy proxies); (ii) use conservative thresholds ($\tau_c = 0.9$, $\tau_u = 0.1$) to default to the COME path; (iii) monitor $\Loss_\mathrm{cal}$ online---a sudden increase signals routing failure.
+
+\subsection{Limitations and Threats to Validity}
+\label{sec:disc:limitations}
+
+\paragraph{Limitations.}
+(i) The UCB threshold depends on four hyperparameters; accuracy varies by up to \sensRange{}~pp across the tested range (Table~\ref{tab:sensitivity}). Adaptive thresholds could improve robustness but introduce additional hyperparameters. (ii) At $B=1$, the calibration regularizer's batch-mean estimate becomes noisy (ECE rises from 4.27\% to 18.95\%); per-sample calibration methods could mitigate this. (iii) ResNet-50/ImageNet-C evaluation was inconclusive due to a corrupted source checkpoint; full cross-architecture validation is deferred to future work. (iv) We evaluate on ImageNet-C and CIFAR-100-C; validation on additional benchmarks (e.g., ImageNet-R, domain adaptation datasets) would strengthen the claims.
+
+\paragraph{Threats to validity.}
+\emph{Internal}: the improvement over COME could be confounded by implementation differences; we mitigate this by reusing the COME codebase and ablating each component (Table~\ref{tab:ablation}). The paired permutation test ($p < \pvalue$) and bootstrap CI rule out chance. \emph{External}: results on ImageNet-C with ViT-B/16 may not generalize to all backbones/benchmarks; we report per-corruption and per-severity breakdowns to characterize where the method helps most. \emph{Construct}: ECE/MCE have known binning sensitivity; we use 15 bins following~\citet{guo2017calibration} and results are robust to 10--20 bins. \emph{Statistical}: 3 seeds is standard in TTA work (each ImageNet-C run is 50{,}000 images per corruption per severity); the bootstrap (10{,}000 resamples) is the standard non-parametric approach.

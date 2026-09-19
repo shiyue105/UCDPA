@@ -1,0 +1,21 @@
+# Core deep learning
+torch
+torchvision
+timm
+safetensors
+
+# Scientific computing
+numpy
+scipy
+pandas
+pyarrow
+scikit-learn
+
+# Visualization
+matplotlib
+Pillow
+
+# Utilities
+tqdm
+requests
+cma

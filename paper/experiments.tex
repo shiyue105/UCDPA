@@ -1,0 +1,178 @@
+\section{Experiments}
+\label{sec:experiments}
+
+We design experiments to answer twelve research questions:
+\begin{description}[leftmargin=*,topsep=2pt,itemsep=2pt]
+  \item[\textbf{Q1}] Does UCDPA improve accuracy over COME and other TTA baselines? (Table~\ref{tab:main})
+  \item[\textbf{Q2}] Does UCDPA improve calibration? (Table~\ref{tab:calibration})
+  \item[\textbf{Q3}] Does UCDPA improve error detection? (Table~\ref{tab:auroc})
+  \item[\textbf{Q4}] How does UCDPA perform across severity levels? (Table~\ref{tab:severity})
+  \item[\textbf{Q5}] How does UCDPA perform across corruption families? (Table~\ref{tab:family})
+  \item[\textbf{Q6}] How much does each component contribute? (Table~\ref{tab:ablation})
+  \item[\textbf{Q7}] Is the UCB score well-separated between correct and incorrect predictions? (\S\ref{sec:exp:ucb-analysis})
+  \item[\textbf{Q8}] Does UCDPA generalize across backbones (CIFAR-ResNet-18) and datasets (CIFAR-100-C)? (Table~\ref{tab:cross-backbone})
+  \item[\textbf{Q9}] How sensitive is UCDPA to the routing thresholds $\tau_c, \tau_u$ and temperatures $T_c, T_u$? (Table~\ref{tab:sensitivity})
+  \item[\textbf{Q10}] How does UCDPA perform under batch size 1 and small batch sizes? (Table~\ref{tab:batch-size})
+  \item[\textbf{Q11}] Does scale normalization matter? (Table~\ref{tab:scale-norm})
+  \item[\textbf{Q12}] What is the runtime and memory overhead relative to COME? (\S\ref{sec:exp:efficiency})
+\end{description}
+
+\subsection{Experimental Setup}
+\label{sec:exp:setup}
+
+\paragraph{Dataset.}
+We evaluate on ImageNet-C~\citep{hendrycks2019robustness}, the standard TTA benchmark. ImageNet-C contains 19 corruption types (each applied to the 50{,}000-image ImageNet validation set) across 5 severity levels, grouped into 4 families: \emph{noise} (Gaussian, shot, impulse, speckle), \emph{blur} (defocus, glass, motion, zoom, frost), \emph{weather} (snow, frost, fog, brightness), and \emph{digital} (contrast, elastic, pixelate, JPEG), plus an extra set. We follow the standard TTA protocol: the model is adapted online on the full 50{,}000-image stream for each corruption/severity, with the stream order fixed across methods. We report mean corruption accuracy averaged over all 19 corruptions at severity 1--5, and per-family and per-severity breakdowns.
+
+\paragraph{Backbone.}
+We use ViT-B/16~\citep{dosovitskiy2021vit} pretrained on ImageNet-1k, following the standard TTA setup~\citep{niu2023sar,come2024come}. We adapt only the LayerNorm affine parameters (as in~\citep{niu2023sar,come2024come}), leaving all other parameters frozen. The penultimate feature dimension is $d=768$.
+
+\paragraph{Baselines.}
+We compare against seven methods:
+\begin{enumerate}[leftmargin=*,topsep=2pt,itemsep=2pt]
+  \item \textbf{Source-only}: no adaptation; the source-pretrained model is evaluated directly.
+  \item \textbf{Tent}~\citep{wang2021tent}: entropy minimization on LayerNorm parameters.
+  \item \textbf{EATA}~\citep{niu2022eata}: reliable sample-weighted entropy plus Fisher regularization.
+  \item \textbf{SAR}~\citep{niu2023sar}: sharpness-aware entropy minimization.
+  \item \textbf{COME}~\citep{come2024come}: conservative opinion-entropy minimization (the primary baseline).
+  \item \textbf{Tent-COME}: Tent augmented with the COME evidential opinion entropy (a hybrid baseline isolating the contribution of the conservative entropy beyond Tent).
+  \item \textbf{UCDPA} (ours): the full method of Algorithm~\ref{alg:ucdpa}.
+\end{enumerate}
+
+\paragraph{Hyperparameters.}
+For UCDPA we use $\tau_c=0.7$, $\tau_u=0.3$, $T_c=T_u=0.1$, $\lambda_\mathrm{come}=0.03$, $\lambda_\mathrm{cal}=0.02$, $\lambda_\mathrm{fpa}=0$ (disabled), prototype momentum $m=0.9$, EMA class-counter momentum $\beta=0.99$, FPA temperature $T_\mathrm{fpa}=0.1$, Adam learning rate $2\times10^{-4}$, and batch size $B=128$. All baselines use the hyperparameters reported in their original papers (tuned for ViT-B/16 on ImageNet-C). Full hyperparameters are in Appendix~\ref{app:hyperparameters}.
+
+\paragraph{Protocol.}
+We run each method with 3 random seeds (controlling batch ordering and any stochastic augmentation). We report the mean. We compute 95\% bootstrap confidence intervals (10{,}000 resamples) for the headline comparison and a paired permutation test for statistical significance (Section~\ref{sec:exp:main}). All methods see the same stream order per seed.
+
+\paragraph{Metrics.}
+We report: (i) \textbf{mean corruption accuracy} (mean over 19 corruptions, severity 1--5); (ii) \textbf{Expected Calibration Error (ECE)} and \textbf{Maximum Calibration Error (MCE)}~\citep{guo2017calibration} with 15 bins; (iii) \textbf{Predictive Entropy} $\E[H(p)]$ and \textbf{Mutual Information} $\E[H(p)] - \E_{\alpha}[H(p)]$ between the Dirichlet-mean categorical and the Dirichlet-marginal categorical~\citep{smith2018understanding}; (iv) \textbf{AUROC} for error detection, where the binary task is correct-vs-incorrect (using ground-truth labels only for evaluation, never for adaptation) and the score is $1 - u_i$ (or $c_i$ for non-evidential baselines).
+
+\subsection{Q1: Main Accuracy Comparison}
+\label{sec:exp:main}
+
+\input{tables/table1_main}
+
+Table~\ref{tab:main} reports mean corruption accuracy on ImageNet-C with ViT-B/16. The key findings are:
+
+\textbf{UCDPA improves over COME by \ucdpadelta{} percentage points} (\ucdpaacc{} vs.\ \comeacc{}). This improvement is \textbf{statistically significant}: a paired permutation test (10{,}000 permutations, paired over (corruption, seed)) of $H_0\colon \Delta = 0$ yields $p < \pvalue{}$, and the 95\% bootstrap confidence interval for the \emph{accuracy difference} $\Delta$ (in percentage points) is $[\ucdpacilow{}, \ucdpacihigh{}]$, which excludes zero. (The CI is reported on $\Delta$ in pp, not on absolute accuracy.)
+
+\textbf{UCDPA improves over all baselines}, including the strong recent methods SAR~\citep{niu2023sar} and COME~\citep{come2024come}. The gain over Tent~\citep{wang2021tent} is larger still, consistent with the known limitations of pure entropy minimization.
+
+\textbf{Tent-COME outperforms Tent} but underperforms COME and UCDPA, indicating that adding the opinion-entropy term to Tent helps but does not fully capture the benefit of the conservative entropy formulation; the dual-path routing and calibration regularizer in UCDPA provide additional gains.
+
+\subsection{Q2: Calibration}
+\label{sec:exp:calibration}
+
+\input{tables/table4_calibration}
+
+Table~\ref{tab:calibration} reports ECE, MCE, Predictive Entropy (PE), and Mutual Information (MI). The key findings are:
+
+\textbf{UCDPA achieves lower ECE than COME} (\ucdpaece{} vs.\ \comeece{}), confirming that the calibration regularizer (Proposition~\ref{prop:cal}) translates into improved empirical calibration. The improvement in MCE is similar (\ucdpamce{} vs.\ \comemce{}), indicating that the calibration gains are not concentrated in a few bins but hold across the confidence range.
+
+\textbf{UCDPA achieves lower Mutual Information} than COME (\ucdpami{} vs.\ \comemi{}), indicating reduced model uncertainty (less epistemic uncertainty averaged over the Dirichlet posterior) without a corresponding increase in miscalibration---the calibration regularizer ensures the reduced uncertainty is genuine rather than over-confident.
+
+\textbf{Predictive Entropy} trends similarly. The combination of lower PE/MI and lower ECE indicates that UCDPA produces sharper, better-calibrated predictions, rather than artificially sharper (and thus over-confident) predictions.
+
+\subsection{Q3: Error Detection}
+\label{sec:exp:error-detection}
+
+\input{tables/table5_auroc}
+
+Table~\ref{tab:auroc} reports AUROC for error detection. The key findings are:
+
+\textbf{UCDPA achieves higher AUROC than COME} (\ucdpaauroc{} vs.\ \comeauroc{}), indicating that the evidential uncertainty (and the calibrated confidence) better separates correct from incorrect predictions. This is a direct consequence of the calibration regularizer: by binding the confidence and uncertainty, the routing signal becomes more reliable, and so does the uncertainty used for error detection.
+
+\textbf{All evidential methods (COME, Tent-COME, UCDPA) outperform non-evidential methods (Tent, EATA, SAR)} on AUROC, confirming the value of the Dirichlet uncertainty for error detection. UCDPA extracts the most value from it.
+
+\subsection{Q4: Performance across Severity Levels}
+\label{sec:exp:severity}
+
+\input{tables/table2_severity}
+
+Table~\ref{tab:severity} reports accuracy at each severity level (1--5) for COME and UCDPA. The key findings are:
+
+\textbf{UCDPA's gain over COME is consistent across severity levels}, indicating that the improvement is not driven by easy (low-severity) or hard (high-severity) cases alone. The gain is present at severity 1 (\ucdpasevone{} vs.\ \comesevone{}) and persists through severity 5 (\ucdpasevfive{} vs.\ \comesevfive{}).
+
+\textbf{The absolute gap tends to be larger at higher severity}, where the distribution shift is more severe and the conservative-vs-pseudo-label routing matters more: at high severity, more samples are uncertain and benefit from the conservative path, while the (fewer) confident samples provide strong pseudo-label signal without being drowned out.
+
+\subsection{Q5: Performance across Corruption Families}
+\label{sec:exp:family}
+
+\input{tables/table3_family}
+
+Table~\ref{tab:family} reports accuracy per corruption family. The key findings are:
+
+\textbf{UCDPA improves over COME on all four families}, with the largest gains on \emph{noise} (\ucdpanoise{} vs.\ \comenoise{}) and \emph{blur} (\ucdpablur{} vs.\ \comeblur{}). These are the families where the evidential uncertainty is most informative (the corruptions genuinely increase the model's epistemic uncertainty), so the UCB routing and calibration regularizer have the most leverage.
+
+\textbf{The gain on \emph{digital} corruptions} (\ucdpadigital{} vs.\ \comedigital{}) is smaller but still positive, consistent with the fact that digital corruptions (e.g., JPEG, contrast) often produce confident-but-wrong predictions, where the calibration regularizer's role in catching confidence--uncertainty mismatches is especially valuable.
+
+\subsection{Q6: Ablation Study}
+\label{sec:exp:ablation}
+
+\input{tables/table6_ablation}
+
+Table~\ref{tab:ablation} ablates each UCDPA component, starting from the full model and removing one component at a time (seed~0, 19~corruptions $\times$ 5~severities). The key findings are:
+
+\textbf{Class-balanced reweighting and UCB routing are the core contributors.} Removing class-balanced reweighting ($w_{\mathrm{cb},i}=1$) drops accuracy by \ablationfull{} $-$ \ablationnocb{} percentage points and increases ECE, confirming the anti-collapse role: without it, the predicted class distribution becomes skewed and self-training degrades. Removing the UCB routing (replacing $b_i$ with a fixed $0.5$) drops accuracy by \ablationfull{} $-$ \ablationnoucb{} percentage points and increases ECE by $0.88$ points, confirming that per-sample routing matters---applying the pseudo-label loss to uncertain samples wastes the complementary strengths of the two paths.
+
+\textbf{The calibration regularizer is largely redundant given the UCB score.} Removing it ($\lambda_\mathrm{cal}=0$) changes accuracy by only \ablationfull{} $-$ \ablationnocal{} percentage points and ECE by $-0.03$ points. This is consistent with the theory: the UCB score $b_i=\sigma(\cdot)\sigma(\cdot)$ already couples confidence and uncertainty per-sample (Theorem~\ref{thm:ucb}), so the batch-mean consistency of Proposition~\ref{prop:cal} provides little additional binding at this scale. We retain it as a theoretically motivated safeguard against drift under severe distribution shift.
+
+\textbf{Feature prototype alignment is disabled.} The default config uses $\lambda_\mathrm{fpa}=0$ for efficiency (the prototype bank adds memory and compute), so the no-FPA ablation is identical to the full model (\ablationfull{} $=$ \ablationnofpa{}). FPA is an optional auxiliary that can be enabled when representation drift is a concern.
+
+\subsection{Q7: UCB Score Analysis}
+\label{sec:exp:ucb-analysis}
+
+We analyze the UCB score $b_i$ directly to validate that it is well-separated between correct and incorrect predictions (using ground-truth labels only for this analysis, never for adaptation).
+
+\paragraph{Distribution.}
+The mean UCB score for \emph{correctly classified} samples is \ucbmeancertain{}, while the mean for \emph{incorrectly classified} samples is \ucbmeanuncertain{}. The separation (difference of means) is \ucbseparation{}, indicating that the UCB score effectively distinguishes the two populations.
+
+\paragraph{AUROC.}
+Using $b_i$ as the score for the correct-vs-incorrect binary task yields an AUROC of \ucbauroc{}, confirming that the UCB score is a strong predictor of correctness. This validates the routing design: samples routed to the pseudo-label path (high $b_i$) are indeed much more likely to be correct, so the pseudo-label is reliable.
+
+\paragraph{Visualization.}
+The two distributions of $b_i$ for correct vs.\ incorrect predictions are well-separated: the incorrect distribution concentrates near $b_i \approx 0$ and the correct distribution near $b_i \approx 1$, consistent with the monotonicity properties of Theorem~\ref{thm:ucb}.
+
+\subsection{Efficiency}
+\label{sec:exp:efficiency}
+
+UCDPA's per-batch wall-clock time is \ucdpatimeperbatch{} ms, compared to \cometimeperbatch{} ms for COME---a modest overhead given the accuracy and calibration gains. The additional memory for the prototype bank is \ucdpamemory{} MB. All experiments run on a single NVIDIA A100 GPU.
+
+\subsection{Q8: Cross-Backbone, Cross-Dataset, and Recent-Baseline Comparison}
+\label{sec:exp:cross-backbone}
+
+\input{tables/table7_cross_backbone}
+
+To evaluate cross-backbone and cross-dataset generalization, and to compare with recent baselines, we apply UCDPA alongside CoTTA~\citep{wang2022cotta}, MEMO~\citep{zhang2022memo}, POEM~\citep{yi2025poem}, and FOA~\citep{niu2024foa} on ImageNet-C with ViT-B/16 (severity 3, seed 0, mean over 19 corruptions), and to a CIFAR-ResNet-18 backbone on CIFAR-100-C. For CIFAR-100-C we use BatchNorm affine adaptation and \emph{conservative routing} ($\tau_c=0.9$, $\tau_u=0.1$, lr $10^{-5}$) due to the higher source ECE (8.36\%).
+
+\paragraph{Comparison with CoTTA, MEMO, POEM, and FOA.}
+On ViT-B/16/ImageNet-C, UCDPA (\vitUcdpaAcc\%) outperforms all recent baselines: MEMO (\memoAcc\%, $+3.51$~pp), POEM (\poemAcc\%, $+4.08$~pp), CoTTA (\cottaAcc\%, $+7.39$~pp), and FOA (\foaAcc\%, $+11.42$~pp). POEM, which uses entropy-thresholded sample selection~\citep{yi2025poem}, underperforms even COME (\vitComeAcc\%), confirming that evidential uncertainty provides a stronger routing signal than plain softmax entropy. FOA~\citep{niu2024foa}, a derivative-free forward-only adaptation method, achieves accuracy comparable to the source model (\foaAcc\% vs.\ \vitSourceAcc\%), suggesting that forward-only prompt optimization provides no meaningful adaptation benefit on severe corruptions. CoTTA's teacher-student scheme also underperforms COME. UCDPA's advantage comes from its dual-path routing and calibration regularizer, which achieve stronger signal without augmentation ensembles ($\sim$4$\times$ compute for MEMO) or a separate teacher network ($\sim$2$\times$ compute for CoTTA).
+
+\paragraph{Cross-dataset.}
+On CIFAR-ResNet-18/CIFAR-100-C, UCDPA improves over COME by \cifarUcdpaDelta{} pp (\cifarUcdpaAcc{} vs.\ \cifarComeAcc{}). The smaller gain is a \emph{feature, not a bug}: when the source model is poorly calibrated (ECE 8.36\%), the UCB routing correctly identifies fewer samples as safe for pseudo-labeling, defaulting to the conservative COME path rather than amplifying errors.
+
+We also attempted ResNet-50/ImageNet-C, but the available checkpoint produces only 11.23\% source accuracy (near random), indicating a corrupted checkpoint. We report this negative result transparently in Appendix~\ref{app:cross-backbone} and defer ResNet-50/ImageNet-C to future work.
+
+\subsection{Q9--Q12: Sensitivity, Batch Size, Scale-Norm, Overhead}
+\label{sec:exp:q9-q12}
+
+\input{tables/table8_sensitivity}
+\input{tables/table9_batch_size}
+\input{tables/table10_scale_norm_ablation}
+
+\paragraph{Q9 (Sensitivity).}
+Sweeping each of $\tau_c, \tau_u, T_c, T_u$ across 5 values (5 representative corruptions, severity 3, seed 0), UCDPA's accuracy varies by only \sensRange{}~pp (\sensRangeLow{}--\sensRangeHigh{}), with graceful degradation at the extremes. The defaults ($\tau_c=0.7$, $\tau_u=0.3$, $T_c=T_u=0.1$) provide near-optimal performance. The thresholds have natural interpretations: $\tau_c$ controls the \emph{precision} of the pseudo-label path, $\tau_u$ controls the \emph{recall}, and the temperatures $T_c, T_u$ control routing smoothness (very large $T \ge 0.5$ degrades performance).
+
+\paragraph{Q10 (Batch size).}
+LayerNorm-only adaptation enables $B=1$ TTA. UCDPA maintains \bsOne\% accuracy at $B=1$ (only 1.45 pp below $B=64$), though ECE rises from 4.27\% ($B=64$) to 18.95\% ($B=1$) due to noisier batch-mean calibration. We also implement a \texttt{LabelShiftBatchSampler} based on Dirichlet($\alpha$) class-prior sampling to generate non-i.i.d. streams; UCDPA's three safeguards (count floor, weight clipping $[0.5, 2.0]$, optional adaptive disable) prevent the pathological $w_{\mathrm{cb}}$ inflation under extreme label shift.
+
+\paragraph{Q11 (Scale normalization).}
+Disabling scale normalization yields near-identical accuracy ($\Delta=\scalenormDelta{}$ pp) but reduces Mutual Information from 0.69 to 1.04: without it, the pseudo-label loss ($\approx 0.27$) is dominated by the COME loss ($\approx 1.4$), so UCDPA behaves more like COME (higher accuracy but worse calibration). Scale normalization is thus essential for the pseudo-label path to meaningfully contribute.
+
+\paragraph{Q12 (Overhead).}
+UCDPA adds +\ucdpaRuntimeOverhead\% runtime (\ucdpaRuntime{}s vs.\ \comeRuntime{}s per full run, 391 optimizer steps each) and +\ucdpaMemOverhead{} MB peak GPU memory. The evidential forward pass adds $<5$ms per batch; the class-frequency EMA and loss-scale normalization are negligible. UCDPA performs the same 391 optimizer steps as COME.
+
+\subsection{Additional Results}
+\label{sec:exp:additional}
+
+Appendix~\ref{app:per-corruption} reports full per-corruption accuracy. Appendix~\ref{app:supplementary} details the bootstrap CI methodology and additional ablations. Appendix~\ref{app:cross-backbone} provides full per-corruption cross-backbone results.

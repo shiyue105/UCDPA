@@ -1,0 +1,18 @@
+\begin{table}[t]
+\centering
+\caption{Calibration and uncertainty quantification on ImageNet-C (ViT-B/16, mean over 19 corruptions, severity 1--5, 3 seeds). ECE/MCE: lower is better. Predictive Entropy (PE): lower indicates sharper predictions. Mutual Information (MI): lower indicates reduced epistemic uncertainty.}
+\label{tab:calibration}
+\begin{tabular}{lcccc}
+\toprule
+Method & ECE $\downarrow$ & MCE $\downarrow$ & PE $\downarrow$ & MI $\downarrow$ \\
+\midrule
+Source-only & \sourceece & \sourcemce & \sourcepe & \sourcemi \\
+Tent~\citep{wang2021tent} & \tentece & \tentmce & \tentpe & \tentmi \\
+EATA~\citep{niu2022eata} & \eataece & \eatamce & \eatape & \eatami \\
+SAR~\citep{niu2023sar} & \sarece & \sarmce & \sarpe & \sarmi \\
+COME~\citep{come2024come} & \comeece & \comemce & \comepe & \comemi \\
+Tent-COME & \tentcomeece & \tentcomemce & \tentcomepe & \tentcomemi \\
+\textbf{UCDPA (ours)} & \ucdpaece & \ucdpamce & \ucdpape & \ucdpami \\
+\bottomrule
+\end{tabular}
+\end{table}

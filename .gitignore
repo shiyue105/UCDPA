@@ -1,0 +1,42 @@
+# Large binaries & experiment artifacts
+checkpoints/
+results/samples/
+logs/
+*.pth
+*.pt
+*.ckpt
+*.safetensors
+
+# Per-run raw experiment details (keep only aggregated full_summary.csv)
+results/summaries/*
+!results/summaries/full_summary.csv
+
+# Figures: upload PDF versions only
+results/figures/*.png
+
+# LaTeX build artifacts
+paper/*.aux
+paper/*.bbl
+paper/*.blg
+paper/*.log
+paper/*.out
+*.synctex.gz
+
+# Python
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+.venv/
+venv/
+env/
+*.egg-info/
+.conda/
+
+# Temporary GPU scheduler/task files at repo root
+/_*.json
+
+# Markdown files (README will be added manually later: git add -f README.md)
+*.md
+
+# OS
+.DS_Store

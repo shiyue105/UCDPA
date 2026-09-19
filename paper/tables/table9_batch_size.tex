@@ -1,0 +1,15 @@
+\begin{table}[t]
+\centering
+\caption{Batch size sensitivity on ImageNet-C (ViT-B/16, 19 corruptions, severity 3, seed 0). LayerNorm-only adaptation enables batch=1 TTA, unlike BatchNorm-based methods. UCDPA maintains accuracy across all batch sizes; the highest accuracy is achieved at $B=8$.}
+\label{tab:batch-size}
+\begin{tabular}{rrrrr}
+\toprule
+Batch Size & Acc (\%) & ECE (\%) & AUROC & Runtime (s) \\
+\midrule
+1  & \bsOne       & 18.95 & 0.832 & 1162.6 \\
+8  & \bsEight     & 13.15 & 0.842 & 343.4 \\
+32 & \bsThirtyTwo & 7.14  & 0.847 & 300.5 \\
+64 & \bsSixtyFour & 4.27  & 0.851 & 291.3 \\
+\bottomrule
+\end{tabular}
+\end{table}

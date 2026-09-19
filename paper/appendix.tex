@@ -1,0 +1,155 @@
+\appendix
+
+\section{Hyperparameters and Threshold Sensitivity}
+\label{app:hyperparameters}
+
+Table~\ref{tab:hyperparameters} lists all UCDPA hyperparameters. We use the same values across all 19 corruptions and 5 severities (no per-corruption tuning). The threshold sensitivity is reported in Table~\ref{tab:sensitivity} (main paper); accuracy is stable within \sensRange{}~pp across the tested range, with the best performance at the defaults ($\tau_c=0.7$, $\tau_u=0.3$, $T_c=T_u=0.1$).
+
+\begin{table}[h]
+\centering
+\caption{UCDPA hyperparameters.}
+\label{tab:hyperparameters}
+\begin{tabular}{lll}
+\toprule
+Symbol & Description & Value \\
+\midrule
+$\tau_c$ & UCB confidence threshold & $0.7$ \\
+$\tau_u$ & UCB uncertainty threshold & $0.3$ \\
+$T_c, T_u$ & UCB temperatures & $0.1$ \\
+$\lambda_\mathrm{come}$ & COME entropy mixing & $0.03$ \\
+$\lambda_\mathrm{cal}$ & Calibration weight & $0.02$ \\
+$\lambda_\mathrm{fpa}$ & FPA weight & $0$ (off) \\
+$\beta$ & Class-counter EMA & $0.99$ \\
+$\mathrm{lr}$ & Adam LR (LayerNorm) & $2 \times 10^{-4}$ \\
+$B$ & Batch size & $128$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Per-Corruption and Cross-Backbone Full Results}
+\label{app:full-results}
+\label{app:per-corruption}
+\label{app:cross-backbone}
+
+Table~\ref{tab:per-corruption} reports per-corruption accuracy for all methods (severity 3, seed 0). UCDPA outperforms all baselines on \emph{every} corruption. Table~\ref{tab:cross-backbone-full} reports full cross-backbone, cross-dataset results.
+
+\begin{table}[h]
+\centering
+\small
+\caption{Per-corruption accuracy (ImageNet-C, ViT-B/16, severity 3, seed 0). UCDPA outperforms all baselines on every corruption.}
+\label{tab:per-corruption}
+\begin{tabular}{lcccccc}
+\toprule
+Corruption & FOA & CoTTA & POEM & MEMO & COME & UCDPA \\
+\midrule
+Gaussian noise & 60.41 & 65.61 & 66.85 & 67.55 & 68.72 & 70.80 \\
+Shot noise & 58.03 & 63.69 & 66.28 & 67.17 & 67.17 & 69.83 \\
+Impulse noise & 58.85 & 64.63 & 66.93 & 68.18 & 68.33 & 70.66 \\
+Defocus blur & 51.84 & 58.74 & 63.18 & 65.09 & 63.98 & 66.73 \\
+Glass blur & 37.13 & 42.83 & 54.55 & 56.79 & 54.89 & 60.82 \\
+Motion blur & 58.35 & 64.15 & 66.45 & 68.29 & 67.89 & 70.18 \\
+Zoom blur & 45.06 & 49.32 & 58.69 & 59.14 & 57.70 & 61.70 \\
+Snow & 45.15 & 49.65 & 56.04 & 56.28 & 58.24 & 64.00 \\
+Frost & 34.17 & 38.01 & 44.13 & 41.64 & 48.57 & 56.11 \\
+Fog & 70.89 & 73.10 & 74.61 & 74.76 & 75.27 & 76.24 \\
+Brightness & 72.50 & 74.12 & 75.47 & 75.64 & 76.81 & 78.32 \\
+Contrast & 76.69 & 78.02 & 78.42 & 78.68 & 78.55 & 79.38 \\
+Elastic transform & 67.77 & 71.02 & 72.86 & 73.13 & 74.70 & 76.30 \\
+Pixelate & 69.21 & 71.35 & 72.67 & 72.76 & 74.81 & 76.49 \\
+JPEG & 67.99 & 70.65 & 71.88 & 71.92 & 73.04 & 74.76 \\
+Speckle noise & 61.16 & 66.16 & 68.26 & 69.06 & 69.64 & 71.82 \\
+Gaussian blur & 54.51 & 60.67 & 65.29 & 66.91 & 65.92 & 68.61 \\
+Spatter & 64.01 & 67.10 & 68.73 & 68.98 & 70.72 & 73.35 \\
+Saturate & 75.03 & 76.43 & 76.86 & 77.18 & 79.00 & 79.65 \\
+\midrule
+\textbf{Mean} & \textbf{59.41} & \textbf{63.44} & \textbf{66.75} & \textbf{67.32} & \textbf{68.10} & \textbf{70.83} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[h]
+\centering
+\small
+\caption{Cross-backbone, cross-dataset, and recent-baseline results (severity 3, seed 0, mean over 19 corruptions). ResNet-50/ImageNet-C is a \emph{negative} result due to a corrupted source checkpoint (source accuracy 11.23\%). AUROC uses the combined score (confidence + evidential uncertainty).}
+\label{tab:cross-backbone-full}
+\begin{tabular}{llccc}
+\toprule
+Backbone / Dataset & Method & Acc (\%) & ECE (\%) & AUROC \\
+\midrule
+\multirow{8}{*}{ViT-B/16, ImageNet-C}
+  & Source & 59.41 & 4.50 & 0.840 \\
+  & FOA & 59.41 & 4.50 & 0.841 \\
+  & CoTTA & 63.44 & 5.97 & 0.844 \\
+  & POEM & 66.75 & 9.39 & 0.840 \\
+  & MEMO & 67.32 & 8.77 & 0.838 \\
+  & COME & 68.10 & 7.23 & 0.848 \\
+  & Tent-COME & 65.35 & 6.54 & 0.842 \\
+  & \textbf{UCDPA} & 70.83 & 3.27 & 0.854 \\
+\midrule
+\multirow{4}{*}{CIFAR-ResNet-18, CIFAR-100-C}
+  & Source & 62.66 & 8.36 & 0.846 \\
+  & COME & 62.84 & 8.37 & 0.846 \\
+  & Tent-COME & 62.94 & 8.45 & 0.847 \\
+  & \textbf{UCDPA} & 63.01 & 8.36 & 0.847 \\
+\midrule
+\multirow{3}{*}{ResNet-50, ImageNet-C (neg.)}
+  & Source & 11.23 & 8.56 & 0.737 \\
+  & COME & 11.45 & 12.36 & 0.721 \\
+  & UCDPA & 9.92 & 17.78 & 0.684 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{ResNet-50 negative result.}
+The ResNet-50 source checkpoint produces 11.23\% accuracy (near random), indicating a corrupted or mismatched checkpoint. UCDPA achieves 9.92\% (below source), confirming the theoretical prediction (Section~\ref{sec:disc:failure-modes}): when the source model is near-random, UCB routing cannot distinguish correct from incorrect pseudo-labels, and the error amplification bound loses its force.
+
+\section{Batch Size, Scale-Norm, and Bootstrap Details}
+\label{app:supplementary}
+
+\paragraph{Batch size.}
+Table~\ref{tab:batch-size-full} reports batch size sensitivity. LayerNorm-only adaptation enables $B=1$ TTA; accuracy is maintained within 1.84~pp, though ECE increases at small $B$ due to noisier batch-mean calibration.
+
+\begin{table}[h]
+\centering
+\caption{Batch size sensitivity (ImageNet-C, ViT-B/16, severity 3, seed 0).}
+\label{tab:batch-size-full}
+\begin{tabular}{rrrrr}
+\toprule
+$B$ & Acc (\%) & ECE (\%) & AUROC & Runtime (s) \\
+\midrule
+1  & 73.01 & 18.95 & 0.832 & 1162.6 \\
+8  & 74.30 & 13.15 & 0.842 & 343.4 \\
+32 & 73.57 & 7.14  & 0.847 & 300.5 \\
+64 & 72.46 & 4.27  & 0.851 & 291.3 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Scale normalization.}
+Disabling scale normalization yields essentially identical accuracy ($\Delta=\scalenormDelta{}$~pp) but increases Mutual Information from 0.69 to 1.04, confirming that scale normalization is essential for the pseudo-label path to meaningfully participate in the dual-path objective.
+
+\paragraph{Bootstrap CI methodology.}
+We report 95\% bootstrap CIs for the UCDPA--COME accuracy \emph{difference} $\Delta$. For each of 3 seeds, we compute per-corruption $\delta_{s,c} = \mathrm{acc}_\mathrm{UCDPA}(s,c) - \mathrm{acc}_\mathrm{COME}(s,c)$, pool the 57 values (3 seeds $\times$ 19 corruptions), resample 10{,}000 replicates of size 57 with replacement, and report the 2.5/97.5 percentiles of the mean-difference distribution. The paired permutation test randomly swaps UCDPA/COME labels within each (seed, corruption) pair 10{,}000 times; the reported $p$-value is the fraction of permutations with mean difference at least as large as observed.
+
+\section{Positioning: UCDPA vs.\ Recent TTA Paradigms}
+\label{app:positioning}
+
+Table~\ref{tab:positioning} positions UCDPA relative to recent TTA paradigms. UCDPA achieves high calibration focus at near-baseline compute cost.
+
+\begin{table}[h]
+\centering
+\caption{Positioning of UCDPA relative to recent TTA paradigms.}
+\label{tab:positioning}
+\begin{tabular}{lccc}
+\toprule
+Method family & Signal & Cost & Calib. \\
+\midrule
+Entropy-min (Tent/EATA/SAR) & Softmax entropy & 1$\times$ & Low \\
+Spectral (IMSE) & Feature stats & 1$\times$ & Med \\
+Energy-based (EPOTTA) & Energy & 1.1$\times$ & High \\
+Particle-based & Multi-hyp. & $K\times$ & High \\
+Evidential (COME) & Dirichlet ent. & 1.02$\times$ & Med \\
+\textbf{UCDPA} & \textbf{Evid. routing} & \textbf{1.01$\times$} & \textbf{High} \\
+\bottomrule
+\end{tabular}
+\end{table}

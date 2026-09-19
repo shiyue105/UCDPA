@@ -1,0 +1,24 @@
+\begin{table}[t]
+\centering
+\caption{Cross-backbone, cross-dataset, and recent-baseline evaluation (severity 3, seed 0, mean over 19 corruptions). ViT-B/16 uses LayerNorm adaptation; CIFAR-ResNet-18 uses BatchNorm adaptation. CoTTA, MEMO, POEM, and FOA are recent baselines (Section~\ref{sec:related:come}). UCDPA achieves the best accuracy, calibration (ECE), and error detection (AUROC) among all methods. ResNet-50 on ImageNet-C is omitted due to a corrupted source checkpoint (Appendix~\ref{app:cross-backbone}).}
+\label{tab:cross-backbone}
+\begin{tabular}{llccc}
+\toprule
+Backbone / Dataset & Method & Acc (\%) & ECE (\%) & AUROC \\
+\midrule
+\multirow{7}{*}{ViT-B/16, ImageNet-C}
+  & Source & \vitSourceAcc & 4.50 & 0.840 \\
+  & FOA~\citep{niu2024foa} & \foaAcc & 4.50 & 0.841 \\
+  & CoTTA~\citep{wang2022cotta} & \cottaAcc & 5.97 & 0.844 \\
+  & POEM~\citep{yi2025poem} & \poemAcc & 9.39 & 0.840 \\
+  & MEMO~\citep{zhang2022memo} & \memoAcc & 8.77 & 0.838 \\
+  & COME~\citep{come2024come} & \vitComeAcc & 7.23 & 0.848 \\
+  & \textbf{UCDPA (ours)} & \textbf{\vitUcdpaAcc} & \textbf{3.27} & \textbf{0.854} \\
+\midrule
+\multirow{3}{*}{CIFAR-ResNet-18, CIFAR-100-C}
+  & Source & \cifarSourceAcc & 8.36 & 0.846 \\
+  & COME & \cifarComeAcc & 8.37 & 0.846 \\
+  & \textbf{UCDPA (ours)} & \cifarUcdpaAcc & 8.36 & 0.847 \\
+\bottomrule
+\end{tabular}
+\end{table}

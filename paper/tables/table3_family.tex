@@ -1,0 +1,13 @@
+\begin{table}[t]
+\centering
+\caption{Performance across corruption families on ImageNet-C (ViT-B/16, mean over severities 1--5, 3 seeds). Higher is better. ``Extra'' denotes the additional corruption set.}
+\label{tab:family}
+\begin{tabular}{lccccc}
+\toprule
+Method & Noise & Blur & Weather & Digital & Extra \\
+\midrule
+COME~\citep{come2024come} & \comenoise & \comeblur & \comeweather & \comedigital & \comeextra \\
+\textbf{UCDPA (ours)} & \ucdpanoise & \ucdpablur & \ucdpaweather & \ucdpadigital & \ucdpaextra \\
+\bottomrule
+\end{tabular}
+\end{table}
